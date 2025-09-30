@@ -84,3 +84,32 @@ dist/
 # !/apps/*/migrations/
 # /apps/*/migrations/*
 # !/apps/*/migrations/__init__.py
+
+# Server (Django)
+server/db.sqlite3
+server/__pycache__/
+server/*.pyc
+server/.env
+server/venv/
+server/.venv/
+server/media/
+server/staticfiles/
+server/.vscode/
+server/.idea/
+
+# Client (React Native Expo)
+node_modules/
+client/.expo/
+client/dist/
+client/build/
+client/npm-debug.log*
+client/yarn-debug.log*
+client/yarn-error.log*
+client/.env
+client/.vscode/
+client/.idea/
+
+# General
+.DS_Store
+Thumbs.db
+*.log
