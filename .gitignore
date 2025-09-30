@@ -1,0 +1,86 @@
+# Django
+*.log
+*.pot
+*.pyc
+__pycache__/
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+uploads/
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+pythonenv*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Database
+*.db
+*.sqlite3
+
+# Static files
+staticfiles/
+collected_static/
+
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# PyInstaller
+build/
+dist/
+
+# Pycharm
+.idea/
+
+# VS Code
+.vscode/
+
+# macOS
+*.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Tt]emp/
+
+# Backup files
+*.bak
+*.backup
+
+# Database migrations (optional - only if you want to ignore migrations)
+# !/apps/*/migrations/
+# /apps/*/migrations/*
+# !/apps/*/migrations/__init__.py
