@@ -34,6 +34,13 @@ export interface CartItem {
   subtotal: number;
 }
 
+export interface CartItemType {
+  id: number;
+  product_detail: Product;
+  quantity: number;
+  subtotal: string;
+}
+
 // -----------------------------
 // Order + OrderItem
 // -----------------------------
