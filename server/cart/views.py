@@ -26,7 +26,7 @@ class CartListCreateView(generics.ListCreateAPIView):
                 {"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND
             )
 
-        if product.stock < quantity:
+        if product.inventory_count < quantity:
             return Response(
                 {"error": "Not enough stock available"},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -39,7 +39,7 @@ class CartListCreateView(generics.ListCreateAPIView):
 
         if not created:
             new_quantity = cart_item.quantity + quantity
-            if product.stock < new_quantity:
+            if product.inventory_count < new_quantity:
                 return Response(
                     {"error": "Exceeds available stock"},
                     status=status.HTTP_400_BAD_REQUEST,

@@ -11,8 +11,11 @@ class CartItem(models.Model):
     )
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField(default=1)
+    created_at = models.DateTimeField(auto_now_add=True)  # ✅
+    updated_at = models.DateTimeField(auto_now=True)  # ✅
 
     class Meta:
+        ordering = ["-created_at"]
         unique_together = ("user", "product")
 
     @property
