@@ -17,12 +17,15 @@ import { Ionicons } from "@expo/vector-icons";
 import { Product } from "@/types/models";
 import { AuthContext } from "../context/AuthContext";
 import api from "../api/api";
+import Toast from "react-native-toast-message";
+import { useCart } from "@/hooks/use-cart";
 
 const { width } = Dimensions.get("window");
 
 const ProductDetailScreen: React.FC = () => {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useContext(AuthContext);
+  const { addToCart } = useCart();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [addingToCart, setAddingToCart] = useState<boolean>(false);
@@ -58,10 +61,11 @@ const ProductDetailScreen: React.FC = () => {
 
   const handleAddToCart = async (): Promise<void> => {
     if (!user) {
-      Alert.alert("Login Required", "Please login to add items to your cart.", [
-        { text: "Cancel", style: "cancel" },
-        { text: "Login", onPress: () => router.push("/login") },
-      ]);
+      Toast.show({
+        type: "error",
+        text1: "Login Required",
+        text2: `Please login to add items to your cart.`,
+      });
       return;
     }
 
@@ -72,29 +76,28 @@ const ProductDetailScreen: React.FC = () => {
         "Insufficient Stock",
         `Only ${product.inventory_count} items available in stock.`
       );
+      Toast.show({
+        type: "error",
+        text1: "Insufficient Stock",
+        text2: `Only ${product.inventory_count} items available in stock.`,
+      });
       return;
     }
 
     setAddingToCart(true);
     try {
-      await api.post("/cart/add", {
-        productId: product.id,
-        quantity: quantity,
+      await addToCart(product.id, quantity);
+      Toast.show({
+        type: "success",
+        text1: "Added to Cart 🛒",
+        text2: `${product.title} has been added to your cart.`,
       });
-
-      Alert.alert(
-        "Added to Cart!",
-        `${product.title} has been added to your cart.`,
-        [
-          { text: "Continue Shopping", style: "cancel" },
-          { text: "View Cart", onPress: () => router.push("/cart") },
-        ]
-      );
     } catch (err: any) {
-      console.error("Add to cart error:", err);
-      const errorMessage =
-        err.response?.data?.message || "Failed to add item to cart.";
-      Alert.alert("Error", errorMessage);
+      Toast.show({
+        type: "error",
+        text1: "Failed to Add",
+        text2: err.message || "Something went wrong.",
+      });
     } finally {
       setAddingToCart(false);
     }

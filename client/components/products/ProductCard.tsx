@@ -10,6 +10,8 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Product } from "@/types/models";
+import Toast from "react-native-toast-message";
+import { useCart } from "@/hooks/use-cart";
 
 interface ProductCardProps {
   product: Product;
@@ -25,6 +27,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   cardWidth,
 }) => {
   const scaleValue = new Animated.Value(1);
+  const { addToCart } = useCart();
 
   const handlePressIn = (): void => {
     Animated.spring(scaleValue, {
@@ -120,9 +123,22 @@ const ProductCard: React.FC<ProductCardProps> = ({
                   borderRadius: (cardWidth * 0.2) / 2,
                 },
               ]}
-              onPress={(e) => {
+              onPress={async (e) => {
                 e.stopPropagation();
-                // Handle quick add to cart
+                try {
+                  await addToCart(product.id, 1);
+                  Toast.show({
+                    type: "success",
+                    text1: "Added to Cart 🛒",
+                    text2: `${product.title} has been added to your cart.`,
+                  });
+                } catch (err: any) {
+                  Toast.show({
+                    type: "error",
+                    text1: "Failed to Add",
+                    text2: err.message || "Something went wrong.",
+                  });
+                }
               }}
             >
               <Ionicons name="cart" size={cardWidth * 0.08} color="#9b51e0" />

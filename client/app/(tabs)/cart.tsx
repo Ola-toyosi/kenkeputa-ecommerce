@@ -1,9 +1,22 @@
-import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import React, { useEffect } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  FlatList,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import CartItem from "@/components/cart/CartItem";
+import { useCart } from "@/hooks/use-cart";
 
 export default function CartScreen() {
+  const { cartItems, getCart, removeFromCart, updateCartItem } = useCart();
+  // console.log(cartItems);
+  useEffect(() => {
+    getCart();
+  }, [getCart]);
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -13,19 +26,56 @@ export default function CartScreen() {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.emptyState}>
-        <Ionicons name="cart-outline" size={80} color="#ccc" />
-        <Text style={styles.emptyTitle}>Your cart is empty</Text>
-        <Text style={styles.emptySubtitle}>
-          Browse our products and add items to your cart
-        </Text>
-        <TouchableOpacity
-          style={styles.shopButton}
-          onPress={() => router.push("/products")}
-        >
-          <Text style={styles.shopButtonText}>Start Shopping</Text>
-        </TouchableOpacity>
-      </View>
+      {cartItems.length === 0 ? (
+        <View style={styles.emptyState}>
+          <Ionicons name="cart-outline" size={80} color="#ccc" />
+          <Text style={styles.emptyTitle}>Your cart is empty</Text>
+          <Text style={styles.emptySubtitle}>
+            Browse our products and add items to your cart
+          </Text>
+          <TouchableOpacity
+            style={styles.shopButton}
+            onPress={() => router.push("/products")}
+          >
+            <Text style={styles.shopButtonText}>Start Shopping</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <FlatList
+          data={cartItems}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={({ item }) => (
+            <CartItem
+              item={item}
+              onRemove={() => removeFromCart(item.id)}
+              onUpdateQuantity={updateCartItem}
+            />
+          )}
+          ListFooterComponent={
+            <View style={styles.footer}>
+              <Text style={styles.totalLabel}>
+                Total: $
+                {cartItems
+                  .reduce(
+                    (sum, item) =>
+                      sum + item.product_detail.price * item.quantity,
+                    0
+                  )
+                  .toFixed(2)}
+              </Text>
+              <TouchableOpacity
+                style={styles.checkoutButton}
+                onPress={() => router.push("/checkout")}
+              >
+                <Text style={styles.checkoutButtonText}>
+                  Proceed to Checkout
+                </Text>
+                <Ionicons name="arrow-forward" size={20} color="#fff" />
+              </TouchableOpacity>
+            </View>
+          }
+        />
+      )}
     </View>
   );
 }
@@ -80,5 +130,31 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "600",
+  },
+  footer: {
+    padding: 20,
+    borderTopWidth: 1,
+    borderTopColor: "#f0f0f0",
+    backgroundColor: "#fff",
+  },
+  totalLabel: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 12,
+    color: "#333",
+  },
+  checkoutButton: {
+    backgroundColor: "#9b51e0",
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 14,
+    borderRadius: 10,
+  },
+  checkoutButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+    marginRight: 8,
   },
 });
