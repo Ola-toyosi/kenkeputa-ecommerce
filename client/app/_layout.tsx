@@ -1,22 +1,33 @@
-// app/_layout.tsx
 import { Stack } from "expo-router";
 import { useContext } from "react";
 import { AuthContext, AuthProvider } from "./context/AuthContext";
+import { StatusBar } from "react-native";
+import Toast from "react-native-toast-message";
 
-function RootNavigator() {
+function RootLayoutNav() {
   const { user } = useContext(AuthContext);
-
-  if (!user) {
-    return (
-      <Stack>
-        <Stack.Screen name="index" options={{ headerShown: false }} />
-      </Stack>
-    );
-  }
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="(tabs)" />
+      {!user ? (
+        // Screens when user is not logged in
+        <>
+          <Stack.Screen name="index" options={{ headerShown: false }} />
+          <Stack.Screen name="(auth)/login" options={{ headerShown: false }} />
+          <Stack.Screen name="(auth)/signup" options={{ headerShown: false }} />
+          <Stack.Screen name="products" options={{ headerShown: false }} />
+          <Stack.Screen name="products/[id]" options={{ headerShown: false }} />
+          <Stack.Screen name="search" options={{ headerShown: false }} />
+        </>
+      ) : (
+        // Screens when user is logged in
+        <>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="wishlist" options={{ headerShown: false }} />
+          <Stack.Screen name="cart" options={{ headerShown: false }} />
+          <Stack.Screen name="checkout" options={{ headerShown: false }} />
+        </>
+      )}
     </Stack>
   );
 }
@@ -24,7 +35,9 @@ function RootNavigator() {
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <RootNavigator />
+      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+      <RootLayoutNav />
+      <Toast />
     </AuthProvider>
   );
 }

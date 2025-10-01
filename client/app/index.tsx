@@ -1,271 +1,441 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   View,
-  FlatList,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
   Text,
-  Animated,
-  RefreshControl,
-  ActivityIndicator,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
   Dimensions,
+  ScrollView,
+  ActivityIndicator,
+  FlatList,
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import ProductCard from "@/components/products/ProductCard";
 import { Product } from "@/types/models";
 import api from "./api/api";
-
-interface ProductsResponse {
-  results: Product[];
-  pagination?: {
-    page: number;
-    limit: number;
-    total: number;
-    pages: number;
-  };
-}
+import { AuthContext } from "./context/AuthContext";
 
 const { width } = Dimensions.get("window");
 
-// Responsive grid calculation
-const getNumColumns = () => {
-  // console.log(`Getting columns for ${width}`);
-  if (width > 1024) return 4; // Large tablets/desktop
-  if (width > 768) return 3; // Tablets
-  if (width > 480) return 2; // Large phones
-  return 2; // Small phones
-};
+const FEATURED_CATEGORIES = [
+  {
+    id: 1,
+    name: "Electronics",
+    icon: "phone-portrait",
+    color: "#9b51e0",
+    image:
+      "https://images.unsplash.com/photo-1498049794561-7780e7231661?w=300&h=200&fit=crop",
+    description: "Latest gadgets and devices",
+  },
+  {
+    id: 2,
+    name: "Home & Kitchen",
+    icon: "home",
+    color: "#2ed573",
+    image:
+      "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=300&h=200&fit=crop",
+    description: "Everything for your home",
+  },
+  {
+    id: 3,
+    name: "Fashion",
+    icon: "shirt",
+    color: "#ffa502",
+    image:
+      "https://images.unsplash.com/photo-1445205170230-053b83016050?w=300&h=200&fit=crop",
+    description: "Trendy clothes & accessories",
+  },
+  {
+    id: 4,
+    name: "Sports",
+    icon: "basketball",
+    color: "#1e90ff",
+    image:
+      "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=300&h=200&fit=crop",
+    description: "Fitness gear & equipment",
+  },
+  {
+    id: 5,
+    name: "Beauty",
+    icon: "sparkles",
+    color: "#ff6b81",
+    image:
+      "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=300&h=200&fit=crop",
+    description: "Skincare & cosmetics",
+  },
+  {
+    id: 6,
+    name: "Books",
+    icon: "book",
+    color: "#a55eea",
+    image:
+      "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=300&h=200&fit=crop",
+    description: "Books & stationery",
+  },
+];
 
-const numColumns = getNumColumns();
-const CARD_MARGIN = 8;
-const CONTAINER_PADDING = 16;
-const CARD_WIDTH =
-  (width - CONTAINER_PADDING * 2 - (numColumns - 1) * CARD_MARGIN) / numColumns;
-
-export default function ProductListScreen() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [refreshing, setRefreshing] = useState<boolean>(false);
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("All");
-  const [categories, setCategories] = useState<string[]>(["All"]);
-
-  const scrollY = useRef(new Animated.Value(0)).current;
-  const headerOpacity = scrollY.interpolate({
-    inputRange: [0, 100],
-    outputRange: [0, 1],
-    extrapolate: "clamp",
-  });
-
-  const fetchProducts = async (): Promise<void> => {
-    try {
-      const res = await api.get<ProductsResponse>("/products/");
-      const productsData = res.data.results || res.data;
-      setProducts(Array.isArray(productsData) ? productsData : []);
-    } catch (error) {
-      console.error("Error fetching products:", error);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
-
-  const fetchCategories = async (): Promise<void> => {
-    try {
-      const res = await api.get<{ categories: string[] }>(
-        "/products/categories/list"
-      );
-      const categories =
-        res.data.categories?.filter((c) => c && c.trim()) || [];
-      setCategories(["All", ...categories]);
-    } catch (error) {
-      console.error("Error fetching categories:", error);
-      setCategories(["All"]); // fallback
-    }
-  };
-
-  const onRefresh = (): void => {
-    setRefreshing(true);
-    fetchProducts();
-  };
-
-  const handleProductPress = (productId: number): void => {
-    console.log(`Pressed Product ${productId}`);
-  };
-
-  const renderProductItem = ({ item }: { item: Product }) => (
-    <View style={styles.productItemWrapper}>
-      <ProductCard
-        product={item}
-        onPress={() => handleProductPress(item.id)}
-        cardWidth={CARD_WIDTH}
-      />
-    </View>
-  );
-
-  const renderCategoryChip = (category: string) => (
-    <TouchableOpacity
-      key={category}
-      style={[
-        styles.categoryChip,
-        selectedCategory === category && styles.categoryChipSelected,
-      ]}
-      onPress={() => setSelectedCategory(category)}
-    >
-      <Text
-        style={[
-          styles.categoryChipText,
-          selectedCategory === category && styles.categoryChipTextSelected,
-        ]}
-      >
-        {category}
-      </Text>
-    </TouchableOpacity>
-  );
+export default function WelcomeScreen() {
+  const { user, checkAuth } = useContext(AuthContext);
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+  const [trendingProducts, setTrendingProducts] = useState<Product[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchProducts();
-    fetchCategories();
+    const verifyUser = async () => {
+      await checkAuth();
+    };
+    verifyUser();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    const filterProducts = (): void => {
-      let filtered = products;
+    fetchFeaturedProducts();
+  }, [user]); // fetch products whether logged in or not
 
-      // Filter by search query
-      if (searchQuery) {
-        filtered = filtered.filter(
-          (product) =>
-            product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            product.description
-              ?.toLowerCase()
-              .includes(searchQuery.toLowerCase())
-        );
-      }
+  useEffect(() => {
+    fetchFeaturedProducts();
+  }, []);
 
-      // Filter by category
-      if (selectedCategory !== "All") {
-        filtered = filtered.filter(
-          (product) => product.category === selectedCategory
-        );
-      }
+  const fetchFeaturedProducts = async (): Promise<void> => {
+    try {
+      const [featuredRes, trendingRes] = await Promise.all([
+        api.get("/products/?limit=6"),
+        api.get("/products/?limit=8"),
+      ]);
 
-      setFilteredProducts(filtered);
-    };
-    filterProducts();
-  }, [products, searchQuery, selectedCategory]);
+      const featured = featuredRes.data.results || featuredRes.data;
+      const trending = trendingRes.data.results || trendingRes.data;
 
-  if (loading) {
+      setFeaturedProducts(Array.isArray(featured) ? featured.slice(0, 6) : []);
+      setTrendingProducts(Array.isArray(trending) ? trending.slice(0, 8) : []);
+    } catch (error) {
+      console.error("Error fetching products:", error);
+      // Fallback mock data
+      setFeaturedProducts([]);
+      setTrendingProducts([]);
+    } finally {
+      setLoadingProducts(false);
+      setLoading(false);
+    }
+  };
+
+  const renderCategoryCard = (category: (typeof FEATURED_CATEGORIES)[0]) => (
+    <TouchableOpacity
+      key={category.id}
+      style={styles.categoryCard}
+      onPress={() => router.push(`/products?category=${category.name}`)}
+    >
+      <Image source={{ uri: category.image }} style={styles.categoryImage} />
+      <View style={styles.categoryOverlay}>
+        <View
+          style={[styles.categoryIcon, { backgroundColor: category.color }]}
+        >
+          <Ionicons name={category.icon as any} size={20} color="#fff" />
+        </View>
+        <Text style={styles.categoryName}>{category.name}</Text>
+        <Text style={styles.categoryDescription}>{category.description}</Text>
+      </View>
+    </TouchableOpacity>
+  );
+
+  const renderProductCard = (product: Product) => (
+    <TouchableOpacity
+      key={product.id}
+      style={styles.productCard}
+      onPress={() => router.push(`/products/${product.id}`)}
+    >
+      <Image
+        source={{
+          uri:
+            product.image_url ||
+            "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=150&h=150&fit=crop",
+        }}
+        style={styles.productImage}
+        resizeMode="cover"
+      />
+      <View style={styles.productInfo}>
+        <Text style={styles.productName} numberOfLines={2}>
+          {product.title}
+        </Text>
+        <Text style={styles.productPrice}>${product.price.toFixed(2)}</Text>
+        <View style={styles.productRating}>
+          <Ionicons name="star" size={12} color="#FFD700" />
+          <Text style={styles.ratingText}>4.8</Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+
+  const renderTrendingProduct = ({ item }: { item: Product }) => (
+    <TouchableOpacity
+      style={styles.trendingProductCard}
+      onPress={() => router.push(`/products/${item.id}`)}
+    >
+      <Image
+        source={{
+          uri:
+            item.image_url ||
+            "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=120&h=120&fit=crop",
+        }}
+        style={styles.trendingProductImage}
+        resizeMode="cover"
+      />
+      <View style={styles.trendingProductInfo}>
+        <Text style={styles.trendingProductName} numberOfLines={2}>
+          {item.title}
+        </Text>
+        <Text style={styles.trendingProductPrice}>
+          ${item.price.toFixed(2)}
+        </Text>
+      </View>
+    </TouchableOpacity>
+  );
+
+  if (loading || loadingProducts) {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={styles.center}>
         <ActivityIndicator size="large" color="#9b51e0" />
-        <Text style={styles.loadingText}>Discovering amazing products...</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      {/* Animated Header */}
-      <Animated.View style={[styles.header, { opacity: 100 }]}>
-        <Text style={styles.headerTitle}>Kenkeputa</Text>
-      </Animated.View>
-
-      {/* Main Content */}
-      <View style={styles.content}>
-        {/* Search Bar */}
-        <View style={styles.searchContainer}>
-          <Ionicons
-            name="search"
-            size={20}
-            color="#666"
-            style={styles.searchIcon}
-          />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search products..."
-            placeholderTextColor="#999"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-          {searchQuery ? (
-            <TouchableOpacity onPress={() => setSearchQuery("")}>
-              <Ionicons name="close-circle" size={20} color="#999" />
-            </TouchableOpacity>
-          ) : null}
-        </View>
-
-        {/* Categories Scroll */}
-        <View style={styles.categoriesContainer}>
-          <FlatList
-            data={categories}
-            renderItem={({ item }) => renderCategoryChip(item)}
-            keyExtractor={(item) => item}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.categoriesList}
-          />
-        </View>
-
-        {/* Results Header */}
-        <View style={styles.resultsHeader}>
-          <Text style={styles.resultsTitle}>
-            {selectedCategory === "All" ? "All Products" : selectedCategory}
-          </Text>
-          <Text style={styles.resultsCount}>
-            {filteredProducts.length}{" "}
-            {filteredProducts.length === 1 ? "product" : "products"}
-          </Text>
-        </View>
-
-        {/* Products Grid */}
-        {filteredProducts.length > 0 ? (
-          <FlatList
-            data={filteredProducts}
-            renderItem={renderProductItem}
-            keyExtractor={(item) => item.id.toString()}
-            numColumns={numColumns}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.productsGrid}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={onRefresh}
-                colors={["#9b51e0"]}
-                tintColor="#9b51e0"
-              />
-            }
-            onScroll={Animated.event(
-              [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-              { useNativeDriver: false }
-            )}
-            scrollEventThrottle={16}
-          />
-        ) : (
-          <View style={styles.emptyState}>
-            <Ionicons name="search-outline" size={64} color="#ccc" />
-            <Text style={styles.emptyStateTitle}>No products found</Text>
-            <Text style={styles.emptyStateText}>
-              {searchQuery
-                ? `No results for "${searchQuery}"`
-                : `No products in ${selectedCategory} category`}
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      {/* Hero Section */}
+      <View style={styles.heroSection}>
+        {user ? (
+          <View style={styles.heroContent}>
+            <Text style={styles.heroTitle}>
+              Welcome back, {user.username} 👋
             </Text>
-            <TouchableOpacity
-              style={styles.resetButton}
-              onPress={() => {
-                setSearchQuery("");
-                setSelectedCategory("All");
-              }}
-            >
-              <Text style={styles.resetButtonText}>Reset Filters</Text>
-            </TouchableOpacity>
+            <Text style={styles.heroSubtitle}>Here are some picks for you</Text>
+          </View>
+        ) : (
+          <View style={styles.heroContent}>
+            <Text style={styles.heroTitle}>Welcome to{"\n"}Kenkeputa</Text>
+            <Text style={styles.heroSubtitle}>
+              Discover amazing products at unbeatable prices. Shop the latest
+              trends with fast delivery and secure payments.
+            </Text>
+
+            <View style={styles.heroImageContainer}>
+              <Image
+                source={{
+                  uri: "https://images.unsplash.com/photo-1607082350899-7e105aa886ae?w=400&h=300&fit=crop",
+                }}
+                style={styles.heroImage}
+              />
+            </View>
+
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity
+                style={styles.primaryButton}
+                onPress={() => router.push("/(auth)/signup")}
+              >
+                <Text style={styles.primaryButtonText}>Get Started</Text>
+                <Ionicons name="arrow-forward" size={20} color="#fff" />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.secondaryButton}
+                onPress={() => router.push("/(auth)/login")}
+              >
+                <Text style={styles.secondaryButtonText}>
+                  I have an account
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         )}
       </View>
-    </View>
+
+      {/* Featured Categories */}
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Shop by Category</Text>
+          <TouchableOpacity onPress={() => router.push("/products")}>
+            <Text style={styles.seeAllText}>View All</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={styles.categoriesGrid}>
+          {FEATURED_CATEGORIES.slice(0, 4).map(renderCategoryCard)}
+        </View>
+      </View>
+
+      {/* Featured Products */}
+      {featuredProducts.length > 0 && (
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Featured Products</Text>
+            <TouchableOpacity onPress={() => router.push("/products")}>
+              <Text style={styles.seeAllText}>See All</Text>
+            </TouchableOpacity>
+          </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.featuredProductsScroll}
+          >
+            {featuredProducts.map(renderProductCard)}
+          </ScrollView>
+        </View>
+      )}
+
+      {/* All Categories */}
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>More Categories</Text>
+          <TouchableOpacity onPress={() => router.push("/products")}>
+            <Text style={styles.seeAllText}>Explore</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={styles.categoriesGrid}>
+          {FEATURED_CATEGORIES.slice(4).map(renderCategoryCard)}
+        </View>
+      </View>
+
+      {/* Trending Products */}
+      {trendingProducts.length > 0 && (
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Trending Now</Text>
+            <TouchableOpacity onPress={() => router.push("/products")}>
+              <Text style={styles.seeAllText}>View All</Text>
+            </TouchableOpacity>
+          </View>
+          <FlatList
+            data={trendingProducts}
+            renderItem={renderTrendingProduct}
+            keyExtractor={(item) => item.id.toString()}
+            numColumns={2}
+            scrollEnabled={false}
+            contentContainerStyle={styles.trendingGrid}
+            columnWrapperStyle={styles.trendingColumnWrapper}
+          />
+        </View>
+      )}
+
+      {/* Features Section */}
+      <View style={styles.featuresSection}>
+        <Text style={styles.sectionTitle}>Why Choose Kenkeputa?</Text>
+
+        <View style={styles.featuresGrid}>
+          <View style={styles.featureCard}>
+            <View
+              style={[
+                styles.featureIcon,
+                { backgroundColor: "rgba(155, 81, 224, 0.1)" },
+              ]}
+            >
+              <Ionicons name="shield-checkmark" size={32} color="#9b51e0" />
+            </View>
+            <Text style={styles.featureTitle}>Secure Shopping</Text>
+            <Text style={styles.featureDescription}>
+              Your data and payments are protected with bank-level security
+            </Text>
+          </View>
+
+          <View style={styles.featureCard}>
+            <View
+              style={[
+                styles.featureIcon,
+                { backgroundColor: "rgba(46, 213, 115, 0.1)" },
+              ]}
+            >
+              <Ionicons name="rocket" size={32} color="#2ed573" />
+            </View>
+            <Text style={styles.featureTitle}>Fast Delivery</Text>
+            <Text style={styles.featureDescription}>
+              Get your orders delivered in 2-3 business days
+            </Text>
+          </View>
+
+          <View style={styles.featureCard}>
+            <View
+              style={[
+                styles.featureIcon,
+                { backgroundColor: "rgba(255, 165, 2, 0.1)" },
+              ]}
+            >
+              <Ionicons name="headset" size={32} color="#ffa502" />
+            </View>
+            <Text style={styles.featureTitle}>24/7 Support</Text>
+            <Text style={styles.featureDescription}>
+              Our support team is always here to help you
+            </Text>
+          </View>
+
+          <View style={styles.featureCard}>
+            <View
+              style={[
+                styles.featureIcon,
+                { backgroundColor: "rgba(30, 144, 255, 0.1)" },
+              ]}
+            >
+              <Ionicons name="refresh" size={32} color="#1e90ff" />
+            </View>
+            <Text style={styles.featureTitle}>Easy Returns</Text>
+            <Text style={styles.featureDescription}>
+              Not happy? Return within 30 days, no questions asked
+            </Text>
+          </View>
+        </View>
+      </View>
+
+      {/* CTA Section */}
+      <View style={styles.ctaSection}>
+        {user ? (
+          <>
+            <Text style={styles.ctaTitle}>
+              Welcome back, {user.username}! 🎉
+            </Text>
+            <Text style={styles.ctaSubtitle}>
+              What would you like to do today?
+            </Text>
+
+            <TouchableOpacity
+              style={styles.ctaButton}
+              onPress={() => router.push("/cart")}
+            >
+              <Text style={styles.ctaButtonText}>Go to Cart</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.ctaButton]}
+              onPress={() => router.push("/profile")}
+            >
+              <Text style={styles.ctaButtonText}>View Profile</Text>
+            </TouchableOpacity>
+          </>
+        ) : (
+          <>
+            <Text style={styles.ctaTitle}>Ready to Start Shopping?</Text>
+            <Text style={styles.ctaSubtitle}>
+              Join thousands of happy customers shopping on Kenkeputa
+            </Text>
+
+            <TouchableOpacity
+              style={styles.ctaButton}
+              onPress={() => router.push("/(auth)/signup")}
+            >
+              <Text style={styles.ctaButtonText}>Create Account</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.loginLink}
+              onPress={() => router.push("/(auth)/login")}
+            >
+              <Text style={styles.loginLinkText}>
+                Already have an account?{" "}
+                <Text style={styles.loginLinkBold}>Sign In</Text>
+              </Text>
+            </TouchableOpacity>
+          </>
+        )}
+      </View>
+    </ScrollView>
   );
 }
 
@@ -274,136 +444,319 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#fff",
   },
-  header: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: "#fff",
+  center: { flex: 1, justifyContent: "center", alignItems: "center" },
+  heroSection: {
+    paddingHorizontal: 24,
     paddingTop: 60,
-    paddingBottom: 16,
-    paddingHorizontal: 20,
-    zIndex: 1000,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
+    paddingBottom: 40,
+    backgroundColor: "#f8f8f8",
   },
-  headerTitle: {
-    fontSize: 24,
+  heroContent: {
+    alignItems: "center",
+  },
+  heroTitle: {
+    fontSize: 36,
     fontWeight: "bold",
-    color: "#9b51e0",
+    color: "#1a1a1a",
     textAlign: "center",
+    marginBottom: 16,
+    lineHeight: 42,
   },
-  content: {
-    flex: 1,
-    paddingTop: 100, // Space for animated header
+  heroSubtitle: {
+    fontSize: 16,
+    color: "#666",
+    textAlign: "center",
+    lineHeight: 24,
+    marginBottom: 32,
   },
-  searchContainer: {
+  heroImageContainer: {
+    width: width - 48,
+    height: 200,
+    borderRadius: 16,
+    overflow: "hidden",
+    marginBottom: 32,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 5,
+  },
+  heroImage: {
+    width: "100%",
+    height: "100%",
+  },
+  buttonContainer: {
+    width: "100%",
+    gap: 12,
+  },
+  primaryButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f8f8f8",
-    marginHorizontal: 16,
-    marginBottom: 16,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    height: 50,
-  },
-  searchIcon: {
-    marginRight: 12,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    color: "#333",
-  },
-  categoriesContainer: {
-    marginBottom: 16,
-  },
-  categoriesList: {
-    paddingHorizontal: 16,
-  },
-  categoryChip: {
-    backgroundColor: "#f8f8f8",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginRight: 8,
-    borderWidth: 1,
-    borderColor: "#e1e1e1",
-  },
-  categoryChipSelected: {
+    justifyContent: "center",
     backgroundColor: "#9b51e0",
-    borderColor: "#9b51e0",
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    shadowColor: "#9b51e0",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
-  categoryChipText: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: "#666",
-  },
-  categoryChipTextSelected: {
+  primaryButtonText: {
     color: "#fff",
+    fontSize: 18,
+    fontWeight: "bold",
+    marginRight: 8,
   },
-  resultsHeader: {
+  secondaryButton: {
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: "#9b51e0",
+    alignItems: "center",
+  },
+  secondaryButtonText: {
+    color: "#9b51e0",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  section: {
+    marginVertical: 24,
+  },
+  sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 16,
+    paddingHorizontal: 24,
     marginBottom: 16,
   },
-  resultsTitle: {
-    fontSize: 16,
+  sectionTitle: {
+    fontSize: 22,
     fontWeight: "bold",
     color: "#1a1a1a",
   },
-  resultsCount: {
-    fontSize: 12,
-    color: "#666",
+  seeAllText: {
+    fontSize: 14,
+    color: "#9b51e0",
+    fontWeight: "600",
   },
-  productsGrid: {
-    paddingHorizontal: 6,
+  categoriesGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    paddingHorizontal: 20,
+    gap: 12,
   },
-  productItemWrapper: {
-    marginHorizontal: CARD_MARGIN,
-    marginBottom: 16,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#fff",
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 16,
-    color: "#666",
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 24,
-  },
-  emptyStateTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#333",
-    marginTop: 8,
+  categoryCard: {
+    width: (width - 52) / 2,
+    height: 140,
+    borderRadius: 16,
+    overflow: "hidden",
+    position: "relative",
     marginBottom: 8,
   },
-  emptyStateText: {
-    fontSize: 16,
-    color: "#666",
-    textAlign: "center",
-    marginBottom: 24,
+  categoryImage: {
+    width: "100%",
+    height: "100%",
   },
-  resetButton: {
-    backgroundColor: "#9b51e0",
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 25,
+  categoryOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 12,
   },
-  resetButtonText: {
+  categoryIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  categoryName: {
     color: "#fff",
     fontSize: 16,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginBottom: 4,
+  },
+  categoryDescription: {
+    color: "rgba(255,255,255,0.8)",
+    fontSize: 12,
+    textAlign: "center",
+  },
+  featuredProductsScroll: {
+    paddingHorizontal: 20,
+    gap: 12,
+  },
+  productCard: {
+    width: 160,
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 12,
+    marginRight: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  productImage: {
+    width: "100%",
+    height: 120,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  productInfo: {
+    flex: 1,
+  },
+  productName: {
+    fontSize: 14,
     fontWeight: "600",
+    color: "#1a1a1a",
+    marginBottom: 4,
+    lineHeight: 18,
+  },
+  productPrice: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#9b51e0",
+    marginBottom: 4,
+  },
+  productRating: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  ratingText: {
+    fontSize: 12,
+    color: "#666",
+    marginLeft: 4,
+  },
+  trendingGrid: {
+    paddingHorizontal: 20,
+  },
+  trendingColumnWrapper: {
+    gap: 12,
+    marginBottom: 12,
+  },
+  trendingProductCard: {
+    flex: 1,
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+    minHeight: 160,
+  },
+  trendingProductImage: {
+    width: "100%",
+    height: 100,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  trendingProductInfo: {
+    flex: 1,
+  },
+  trendingProductName: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#1a1a1a",
+    marginBottom: 4,
+    lineHeight: 16,
+  },
+  trendingProductPrice: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#9b51e0",
+  },
+  featuresSection: {
+    paddingHorizontal: 24,
+    paddingVertical: 48,
+    backgroundColor: "#fff",
+  },
+  featuresGrid: {
+    gap: 20,
+  },
+  featureCard: {
+    backgroundColor: "#fafafa",
+    padding: 20,
+    borderRadius: 16,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#f0f0f0",
+  },
+  featureIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  featureTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#1a1a1a",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  featureDescription: {
+    fontSize: 14,
+    color: "#666",
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  ctaSection: {
+    paddingHorizontal: 24,
+    paddingVertical: 48,
+    backgroundColor: "#9b51e0",
+    alignItems: "center",
+  },
+  ctaTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#fff",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  ctaSubtitle: {
+    fontSize: 16,
+    color: "rgba(255, 255, 255, 0.8)",
+    textAlign: "center",
+    marginBottom: 32,
+    lineHeight: 22,
+  },
+  ctaButton: {
+    backgroundColor: "#fff",
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    borderRadius: 25,
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  ctaButtonText: {
+    color: "#9b51e0",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  loginLink: {
+    padding: 8,
+  },
+  loginLinkText: {
+    color: "rgba(255, 255, 255, 0.8)",
+    fontSize: 14,
+  },
+  loginLinkBold: {
+    color: "#fff",
+    fontWeight: "bold",
   },
 });
