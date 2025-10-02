@@ -112,11 +112,12 @@ def merge_carts_view(request):
     """
     Merge anonymous cart into user cart after login
     """
-    if not request.session.session_key:
-        return Response({"message": "No session cart to merge"})
+    session_key = request.data.get("session_key")
+    if not session_key:
+        return Response({"message": "No session cart to merge"}, status=400)
 
     try:
-        session_cart = Cart.objects.get(session_key=request.session.session_key)
+        session_cart = Cart.objects.get(session_key=session_key)
         user_cart = get_or_create_cart(request)
 
         merged_cart = merge_carts(request, session_cart, user_cart)
