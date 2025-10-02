@@ -26,6 +26,9 @@ class ProductViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """Override to ensure we're always using the base queryset"""
+        if not self.request.user.is_staff:
+            qs = qs.filter(is_active=True)
+            return qs
         return Product.objects.all().order_by("-created_at")
 
     @action(detail=False, methods=["get"], url_path="categories/list")
@@ -36,3 +39,11 @@ class ProductViewSet(viewsets.ModelViewSet):
             .exclude(category="")  # don’t include empty categories
         )
         return Response({"categories": list(categories)})
+
+    def perform_destroy(self, instance):
+        if instance.orderitem_set.exists():
+            # Instead of deleting, mark inactive
+            instance.is_active = False
+            instance.save()
+        else:
+            instance.delete()
