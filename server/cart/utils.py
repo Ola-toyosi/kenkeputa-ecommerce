@@ -65,6 +65,8 @@ def add_to_cart(cart, product_id, quantity=1):
     """
     Add product to cart with stock validation
     """
+    if quantity <= 0:
+        return None, "Quantity must be greater than zero"
     try:
         product = Product.objects.get(id=product_id)
     except Product.DoesNotExist:

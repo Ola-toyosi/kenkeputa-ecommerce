@@ -1,0 +1,1 @@
+python manage.py test users.tests products.tests cart.tests orders.tests

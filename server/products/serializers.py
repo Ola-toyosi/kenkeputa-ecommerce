@@ -3,7 +3,7 @@ from .models import Product
 
 
 class ProductSerializer(serializers.ModelSerializer):
-    price = serializers.FloatField()  # 🔥 force numbers, not strings
+    price = serializers.FloatField()
 
     class Meta:
         model = Product
