@@ -1,11 +1,14 @@
 ```markdown
 # Kenkeputa E-Commerce
 
-A full-stack e-commerce platform built with **Django Rest Framework (backend)** and **React Native / Expo (mobile client)**.  
+A full-stack e-commerce platform built with 
+**Django Rest Framework (backend)** 
+              and 
+**React Native - Expo (mobile client)**
+
 Supports product management, image uploads, carts, and orders.
-
+```
 ---
-
 ## 🚀 Getting Started
 
 ### 1. Clone the repository
