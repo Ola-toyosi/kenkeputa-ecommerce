@@ -62,15 +62,11 @@ const ProductDetailScreen: React.FC = () => {
   }, [id]);
 
   useEffect(() => {
-    console.log("🛒 cartItems:", cartItems);
-    console.log("📦 product:", product);
-
     if (cartItems && product) {
       const existingItem = cartItems.find(
         (item: CartItemType) =>
-          (item.product?.id ?? item.product_detail?.id) === product.id
+          (item.product ?? item.product_detail?.id) === product.id
       );
-      console.log("🔎 existingItem:", existingItem);
       if (existingItem) {
         setQuantity(existingItem.quantity);
       }
@@ -113,14 +109,26 @@ const ProductDetailScreen: React.FC = () => {
     if (!product) return;
     const newQuantity = Math.min(quantity + 1, product.inventory_count);
     setQuantity(newQuantity);
-    updateCartItem(product.id, newQuantity);
+    const existingItem = cartItems.find(
+      (item: CartItemType) =>
+        (item.product ?? item.product_detail?.id) === product.id
+    );
+    if (existingItem) {
+      updateCartItem(existingItem.id, newQuantity);
+    }
   };
 
   const decrementQuantity = (): void => {
     if (!product) return;
     const newQuantity = Math.max(1, quantity - 1);
     setQuantity(newQuantity);
-    updateCartItem(product.id, newQuantity);
+    const existingItem = cartItems.find(
+      (item: CartItemType) =>
+        (item.product ?? item.product_detail?.id) === product.id
+    );
+    if (existingItem) {
+      updateCartItem(existingItem.id, newQuantity);
+    }
   };
 
   const handleQuantityChange = (text: string): void => {

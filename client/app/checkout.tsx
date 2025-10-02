@@ -5,48 +5,29 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Alert,
   ActivityIndicator,
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import api from "./api/api";
-import { CartItemType } from "@/types/models";
 import Toast from "react-native-toast-message";
+import { CartItem as CartItemType } from "@/types/models";
+import { useCartContext } from "./context/CartContext";
+import AddressModal from "@/components/checkout/AddressModal";
 
 const CheckoutScreen: React.FC = () => {
-  const [cart, setCart] = useState<CartItemType[]>([]);
+  const { cart, cartItems, getCart } = useCartContext();
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isPlacingOrder, setIsPlacingOrder] = useState<boolean>(false);
   const [shippingAddress, setShippingAddress] = useState<string>("");
   const [paymentMethod, setPaymentMethod] = useState<string>("card");
+  const [addressModalVisible, setAddressModalVisible] = useState(false);
 
   useEffect(() => {
-    fetchCart();
+    getCart();
+    setIsLoading(false);
   }, []);
 
-  const fetchCart = async (): Promise<void> => {
-    try {
-      const res = await api.get("/cart/");
-      console.log("API Response:", res.data);
-
-      // Extract cart items from the nested structure
-      const cartData = res.data?.results || [];
-      console.log("Cart items:", cartData);
-
-      setCart(cartData);
-    } catch (error) {
-      console.error("Error fetching cart:", error);
-      Toast.show({
-        type: "error",
-        text1: "Error fetching cart",
-        text2: "Failed to load cart items",
-      });
-      setCart([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
   const handleCheckout = async (): Promise<void> => {
     if (!shippingAddress.trim()) {
       Toast.show({
@@ -59,19 +40,18 @@ const CheckoutScreen: React.FC = () => {
 
     setIsPlacingOrder(true);
     try {
-      const res = await api.post("/orders/create", {
+      const res = await api.post("/orders/", {
         shippingAddress: shippingAddress.trim(),
       });
-
       Toast.show({
         type: "success",
         text1: "Order Placed!",
-        text2: `Your order #${res.data.orderId} has been placed successfully.`,
+        text2: `Your order #${res.data.id} has been placed successfully.`,
       });
     } catch (error: any) {
       console.error("Checkout error:", error);
       const errorMessage =
-        error.response?.data?.message || "Checkout failed. Please try again.";
+        error.response?.data?.error || "Checkout failed. Please try again.";
       Toast.show({
         type: "error",
         text1: "Checkout Failed",
@@ -83,8 +63,9 @@ const CheckoutScreen: React.FC = () => {
   };
 
   // Fixed subtotal calculation
-  const subtotal = cart.reduce(
-    (sum, item) => sum + item.product_detail.price * item.quantity,
+  const subtotal = cartItems.reduce(
+    (sum: number, item: CartItemType) =>
+      sum + item.product_detail.price * item.quantity,
     0
   );
   const shippingFee = subtotal > 50 ? 0 : 9.99;
@@ -117,175 +98,188 @@ const CheckoutScreen: React.FC = () => {
   }
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Checkout</Text>
-        <Text style={styles.stepIndicator}>Step 2 of 2</Text>
-      </View>
+    <>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Checkout</Text>
+          <Text style={styles.stepIndicator}>Step 2 of 2</Text>
+        </View>
 
-      {/* Order Summary */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Order Summary</Text>
-        {cart.map((item) => (
-          <View key={item.id} style={styles.orderItem}>
-            <View style={styles.itemInfo}>
-              <Text style={styles.itemName} numberOfLines={1}>
-                {item.product_detail.title} {/* Fixed: product_detail.title */}
+        {/* Order Summary */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Order Summary</Text>
+          {cartItems.map((item: CartItemType) => (
+            <View key={item.id} style={styles.orderItem}>
+              <View style={styles.itemInfo}>
+                <Text style={styles.itemName} numberOfLines={1}>
+                  {item.product_detail.title}{" "}
+                  {/* Fixed: product_detail.title */}
+                </Text>
+                <Text style={styles.itemQuantity}>Qty: {item.quantity}</Text>
+              </View>
+              <Text style={styles.itemPrice}>
+                ${(item.product_detail.price * item.quantity).toFixed(2)}{" "}
+                {/* Fixed: product_detail.price */}
               </Text>
-              <Text style={styles.itemQuantity}>Qty: {item.quantity}</Text>
             </View>
-            <Text style={styles.itemPrice}>
-              ${(item.product_detail.price * item.quantity).toFixed(2)}{" "}
-              {/* Fixed: product_detail.price */}
-            </Text>
-          </View>
-        ))}
-      </View>
+          ))}
+        </View>
 
-      {/* Shipping Information */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Shipping Information</Text>
-        <View style={styles.inputContainer}>
-          <Text style={styles.inputLabel}>Shipping Address</Text>
-          <View style={styles.textInput}>
-            <Text
-              style={[
-                styles.inputText,
-                { color: shippingAddress ? "#333" : "#999" },
-              ]}
+        {/* Shipping Information */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Shipping Information</Text>
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Shipping Address</Text>
+            <View style={styles.textInput}>
+              <Text
+                style={[
+                  styles.inputText,
+                  { color: shippingAddress ? "#333" : "#999" },
+                ]}
+              >
+                {shippingAddress || "Enter your complete shipping address"}
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={styles.editButton}
+              onPress={() => setAddressModalVisible(true)}
             >
-              {shippingAddress || "Enter your complete shipping address"}
+              <Text style={styles.editButtonText}>
+                {shippingAddress ? "Edit" : "Add"} Address
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Payment Method */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Payment Method</Text>
+          <View style={styles.paymentMethods}>
+            <TouchableOpacity
+              style={[
+                styles.paymentMethod,
+                paymentMethod === "card" && styles.paymentMethodSelected,
+              ]}
+              onPress={() => setPaymentMethod("card")}
+            >
+              <Ionicons
+                name={
+                  paymentMethod === "card"
+                    ? "radio-button-on"
+                    : "radio-button-off"
+                }
+                size={24}
+                color="#9b51e0"
+              />
+              <Text style={styles.paymentMethodText}>Credit/Debit Card</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.paymentMethod,
+                paymentMethod === "paypal" && styles.paymentMethodSelected,
+              ]}
+              onPress={() => setPaymentMethod("paypal")}
+            >
+              <Ionicons
+                name={
+                  paymentMethod === "paypal"
+                    ? "radio-button-on"
+                    : "radio-button-off"
+                }
+                size={24}
+                color="#9b51e0"
+              />
+              <Text style={styles.paymentMethodText}>PayPal</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.paymentMethod,
+                paymentMethod === "cod" && styles.paymentMethodSelected,
+              ]}
+              onPress={() => setPaymentMethod("cod")}
+            >
+              <Ionicons
+                name={
+                  paymentMethod === "cod"
+                    ? "radio-button-on"
+                    : "radio-button-off"
+                }
+                size={24}
+                color="#9b51e0"
+              />
+              <Text style={styles.paymentMethodText}>Cash on Delivery</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Order Total */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Order Total</Text>
+          <View style={styles.totalRow}>
+            <Text style={styles.totalLabel}>Subtotal</Text>
+            <Text style={styles.totalValue}>${subtotal.toFixed(2)}</Text>
+          </View>
+          <View style={styles.totalRow}>
+            <Text style={styles.totalLabel}>Shipping</Text>
+            <Text style={styles.totalValue}>
+              {shippingFee === 0 ? "FREE" : `$${shippingFee.toFixed(2)}`}
             </Text>
           </View>
-          <TouchableOpacity style={styles.editButton} onPress={() => {}}>
-            <Text style={styles.editButtonText}>
-              {shippingAddress ? "Edit" : "Add"} Address
+          <View style={styles.totalRow}>
+            <Text style={styles.totalLabel}>Tax</Text>
+            <Text style={styles.totalValue}>${tax.toFixed(2)}</Text>
+          </View>
+          <View style={[styles.totalRow, styles.grandTotal]}>
+            <Text style={styles.grandTotalLabel}>Total</Text>
+            <Text style={styles.grandTotalValue}>${total.toFixed(2)}</Text>
+          </View>
+
+          {subtotal < 50 && (
+            <Text style={styles.freeShippingNote}>
+              Add ${(50 - subtotal).toFixed(2)} more for FREE shipping!
             </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Payment Method */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Payment Method</Text>
-        <View style={styles.paymentMethods}>
-          <TouchableOpacity
-            style={[
-              styles.paymentMethod,
-              paymentMethod === "card" && styles.paymentMethodSelected,
-            ]}
-            onPress={() => setPaymentMethod("card")}
-          >
-            <Ionicons
-              name={
-                paymentMethod === "card"
-                  ? "radio-button-on"
-                  : "radio-button-off"
-              }
-              size={24}
-              color="#9b51e0"
-            />
-            <Text style={styles.paymentMethodText}>Credit/Debit Card</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.paymentMethod,
-              paymentMethod === "paypal" && styles.paymentMethodSelected,
-            ]}
-            onPress={() => setPaymentMethod("paypal")}
-          >
-            <Ionicons
-              name={
-                paymentMethod === "paypal"
-                  ? "radio-button-on"
-                  : "radio-button-off"
-              }
-              size={24}
-              color="#9b51e0"
-            />
-            <Text style={styles.paymentMethodText}>PayPal</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.paymentMethod,
-              paymentMethod === "cod" && styles.paymentMethodSelected,
-            ]}
-            onPress={() => setPaymentMethod("cod")}
-          >
-            <Ionicons
-              name={
-                paymentMethod === "cod" ? "radio-button-on" : "radio-button-off"
-              }
-              size={24}
-              color="#9b51e0"
-            />
-            <Text style={styles.paymentMethodText}>Cash on Delivery</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Order Total */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Order Total</Text>
-        <View style={styles.totalRow}>
-          <Text style={styles.totalLabel}>Subtotal</Text>
-          <Text style={styles.totalValue}>${subtotal.toFixed(2)}</Text>
-        </View>
-        <View style={styles.totalRow}>
-          <Text style={styles.totalLabel}>Shipping</Text>
-          <Text style={styles.totalValue}>
-            {shippingFee === 0 ? "FREE" : `$${shippingFee.toFixed(2)}`}
-          </Text>
-        </View>
-        <View style={styles.totalRow}>
-          <Text style={styles.totalLabel}>Tax</Text>
-          <Text style={styles.totalValue}>${tax.toFixed(2)}</Text>
-        </View>
-        <View style={[styles.totalRow, styles.grandTotal]}>
-          <Text style={styles.grandTotalLabel}>Total</Text>
-          <Text style={styles.grandTotalValue}>${total.toFixed(2)}</Text>
-        </View>
-
-        {subtotal < 50 && (
-          <Text style={styles.freeShippingNote}>
-            Add ${(50 - subtotal).toFixed(2)} more for FREE shipping!
-          </Text>
-        )}
-      </View>
-
-      {/* Checkout Button */}
-      <View style={styles.checkoutSection}>
-        <TouchableOpacity
-          style={[
-            styles.placeOrderButton,
-            (!shippingAddress || isPlacingOrder) &&
-              styles.placeOrderButtonDisabled,
-          ]}
-          onPress={handleCheckout}
-          disabled={!shippingAddress || isPlacingOrder}
-        >
-          {isPlacingOrder ? (
-            <ActivityIndicator color="#fff" size="small" />
-          ) : (
-            <>
-              <Text style={styles.placeOrderButtonText}>Place Order</Text>
-              <Ionicons name="lock-closed" size={20} color="#fff" />
-            </>
           )}
-        </TouchableOpacity>
+        </View>
 
-        <TouchableOpacity
-          style={styles.backToCart}
-          onPress={() => router.back()}
-        >
-          <Ionicons name="arrow-back" size={20} color="#9b51e0" />
-          <Text style={styles.backToCartText}>Back to Cart</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+        {/* Checkout Button */}
+        <View style={styles.checkoutSection}>
+          <TouchableOpacity
+            style={[
+              styles.placeOrderButton,
+              (!shippingAddress || isPlacingOrder) &&
+                styles.placeOrderButtonDisabled,
+            ]}
+            onPress={handleCheckout}
+            disabled={!shippingAddress || isPlacingOrder}
+          >
+            {isPlacingOrder ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <>
+                <Text style={styles.placeOrderButtonText}>Place Order</Text>
+                <Ionicons name="lock-closed" size={20} color="#fff" />
+              </>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.backToCart}
+            onPress={() => router.back()}
+          >
+            <Ionicons name="arrow-back" size={20} color="#9b51e0" />
+            <Text style={styles.backToCartText}>Back to Cart</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+      <AddressModal
+        visible={addressModalVisible}
+        onClose={() => setAddressModalVisible(false)}
+        onSave={(addr) => setShippingAddress(addr)}
+      />
+    </>
   );
 };
 

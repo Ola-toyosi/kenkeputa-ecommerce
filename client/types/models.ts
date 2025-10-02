@@ -40,7 +40,7 @@ export interface ProductDetail {
 
 export interface CartItem {
   id: number;
-  product: Product;
+  product: number;
   product_detail: ProductDetail;
   quantity: number;
   subtotal: number;

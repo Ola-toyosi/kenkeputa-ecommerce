@@ -2,7 +2,7 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from django.db import transaction
 from .models import Order, OrderItem
-from cart.models import CartItem
+from cart.models import Cart
 from products.models import Product
 from .serializers import OrderSerializer
 
@@ -20,28 +20,45 @@ class OrderListCreateView(generics.ListCreateAPIView):
     @transaction.atomic
     def create(self, request, *args, **kwargs):
         user = request.user
-        cart_items = CartItem.objects.filter(user=user)
+        shipping_address = request.data.get("shipping_address", "")
 
-        if not cart_items.exists():
+        try:
+            cart = Cart.objects.get(user=user)
+        except Cart.DoesNotExist:
             return Response(
                 {"error": "Cart is empty"}, status=status.HTTP_400_BAD_REQUEST
             )
 
-        total_price = 0
-        order = Order.objects.create(user=user, total_price=0)
+        if not cart.items.exists():
+            return Response(
+                {"error": "Cart is empty"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
-        for item in cart_items:
+        # Create the order
+        order = Order.objects.create(
+            user=user,
+            total_price=0,
+            shipping_address=shipping_address,
+        )
+
+        total_price = 0
+
+        for item in cart.items.all():
             product = item.product
-            if product.stock < item.quantity:
+
+            # Stock check
+            if product.inventory_count < item.quantity:
                 transaction.set_rollback(True)
                 return Response(
-                    {"error": f"Not enough stock for {product.name}"},
+                    {"error": f"Not enough stock for {product.title}"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            product.stock -= item.quantity
+            # Deduct stock
+            product.inventory_count -= item.quantity
             product.save()
 
+            # Create order item
             OrderItem.objects.create(
                 order=order,
                 product=product,
@@ -50,10 +67,12 @@ class OrderListCreateView(generics.ListCreateAPIView):
             )
             total_price += product.price * item.quantity
 
+        # Update order total
         order.total_price = total_price
         order.save()
 
-        cart_items.delete()
+        # Clear cart
+        cart.items.all().delete()
 
         serializer = self.get_serializer(order)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
