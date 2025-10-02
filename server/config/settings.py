@@ -92,7 +92,31 @@ WSGI_APPLICATION = "config.wsgi.application"
 # ]
 
 CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
 
+# Explicitly allow the headers you need
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+    "x-session-key",  # Make sure this is included
+]
+
+# Add this if you're using session authentication
+CORS_ALLOW_METHODS = [
+    "DELETE",
+    "GET",
+    "OPTIONS",
+    "PATCH",
+    "POST",
+    "PUT",
+]
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
