@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import {
   View,
   FlatList,
@@ -11,7 +11,7 @@ import {
   ActivityIndicator,
   Dimensions,
 } from "react-native";
-import { router, useLocalSearchParams } from "expo-router";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import ProductCard from "@/components/products/ProductCard";
 import { Product } from "@/types/models";
@@ -61,6 +61,7 @@ export default function ProductListScreen() {
     try {
       const res = await api.get<ProductsResponse>("/products/");
       const productsData = res.data.results || res.data;
+      // console.log(productsData);
       setProducts(Array.isArray(productsData) ? productsData : []);
     } catch (error) {
       console.error("Error fetching products:", error);
@@ -123,10 +124,12 @@ export default function ProductListScreen() {
     </TouchableOpacity>
   );
 
-  useEffect(() => {
-    fetchProducts();
-    fetchCategories();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetchProducts();
+      fetchCategories();
+    }, [])
+  );
 
   useEffect(() => {
     if (category) {

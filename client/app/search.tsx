@@ -129,7 +129,7 @@ export default function SearchScreen() {
           {item.title}
         </Text>
         <Text style={styles.resultCategory}>{item.category}</Text>
-        <Text style={styles.resultPrice}>${item.price.toFixed(2)}</Text>
+        <Text style={styles.resultPrice}>${Number(item.price).toFixed(2)}</Text>
       </View>
       <Ionicons name="chevron-forward" size={20} color="#ccc" />
     </TouchableOpacity>

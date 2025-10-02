@@ -64,12 +64,12 @@ const ProfileScreen: React.FC = () => {
     //   onPress: () => router.push("/admin"),
     //   show: user?.is_admin || user?.is_staff,
     // },
-    // {
-    //   title: "Vendor Dashboard",
-    //   icon: "storefront-outline",
-    //   onPress: () => router.push("/vendor"),
-    //   show: user?.is_staff,
-    // },
+    {
+      title: "Admin Dashboard",
+      icon: "storefront-outline",
+      onPress: () => router.push("/admin"),
+      show: user?.is_staff,
+    },
   ];
 
   if (!user) {

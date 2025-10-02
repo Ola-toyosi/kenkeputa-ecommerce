@@ -165,7 +165,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
                 { fontSize: getResponsiveFontSize(14) },
               ]}
             >
-              ${product.price.toFixed(2)}
+              ${Number(product.price).toFixed(2)}
             </Text>
             {product.inventory_count > 0 && product.inventory_count < 10 && (
               <Text

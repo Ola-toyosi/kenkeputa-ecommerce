@@ -263,7 +263,9 @@ const ProductDetailScreen: React.FC = () => {
 
           {/* Price */}
           <View style={styles.priceContainer}>
-            <Text style={styles.price}>${product.price.toFixed(2)}</Text>
+            <Text style={styles.price}>
+              ${Number(product.price).toFixed(2)}
+            </Text>
             {!isOutOfStock && product.inventory_count < 10 && (
               <Text style={styles.lowStockWarning}>
                 Only {product.inventory_count} left in stock!

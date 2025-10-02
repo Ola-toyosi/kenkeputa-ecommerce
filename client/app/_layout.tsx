@@ -4,6 +4,7 @@ import { AuthContext, AuthProvider } from "./context/AuthContext";
 import { StatusBar } from "react-native";
 import Toast from "react-native-toast-message";
 import { CartProvider } from "./context/CartContext";
+import { AdminProductsProvider } from "./context/ProductsContext";
 
 function RootLayoutNav() {
   const { user } = useContext(AuthContext);
@@ -37,9 +38,11 @@ export default function RootLayout() {
   return (
     <CartProvider>
       <AuthProvider>
-        <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
-        <RootLayoutNav />
-        <Toast />
+        <AdminProductsProvider>
+          <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+          <RootLayoutNav />
+          <Toast />
+        </AdminProductsProvider>
       </AuthProvider>
     </CartProvider>
   );

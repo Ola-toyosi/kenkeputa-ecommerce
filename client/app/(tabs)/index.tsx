@@ -148,7 +148,9 @@ export default function HomeScreen() {
         <Text style={styles.productName} numberOfLines={2}>
           {product.title}
         </Text>
-        <Text style={styles.productPrice}>${product.price.toFixed(2)}</Text>
+        <Text style={styles.productPrice}>
+          ${Number(product.price).toFixed(2)}
+        </Text>
         <View style={styles.productRating}>
           <Ionicons name="star" size={12} color="#FFD700" />
           <Text style={styles.ratingText}>4.8</Text>
@@ -176,7 +178,7 @@ export default function HomeScreen() {
           {item.title}
         </Text>
         <Text style={styles.trendingProductPrice}>
-          ${item.price.toFixed(2)}
+          ${Number(item.price).toFixed(2)}
         </Text>
       </View>
     </TouchableOpacity>
