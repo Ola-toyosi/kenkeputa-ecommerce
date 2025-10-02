@@ -447,7 +447,7 @@ ALLOWED_HOSTS=127.0.0.1,localhost,192.168.1.42
 
 ### Client (.env)
 ```ini
-API_BASE_URL=http://192.168.1.42:8000/api
+EXPPO_BASE_URL=http://192.168.1.42:8000/api
 ```
 
 ---
@@ -457,16 +457,31 @@ API_BASE_URL=http://192.168.1.42:8000/api
 To quickly seed products for testing:
 
 ```bash
-python manage.py shell
-```
-
-```python
-from products.models import Product
-Product.objects.create(title="Sample Product", price=10.99, inventory_count=50, category="Electronics")
+python manage.py seed
 ```
 
 ---
 
+## 🧪 Testing
+
+### Running Tests
+
+The project includes comprehensive test coverage for all Django apps. Tests are organized by app in `tests/` directories.
+
+#### Run All Tests
+```bash
+python manage.py test 
+
+# Test specific app
+python manage.py test users.tests
+python manage.py test products.tests
+python manage.py test cart.tests
+python manage.py test orders.tests
+
+# Run with verbose output
+python manage.py test users.tests --verbosity=2
+```
+---
 ## ⚠️ Known Limitations
 
 - Currently using URL-based images; production should use proper image upload with S3/Cloudinary
