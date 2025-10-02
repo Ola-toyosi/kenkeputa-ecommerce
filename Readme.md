@@ -1,4 +1,3 @@
-```markdown
 # Kenkeputa E-Commerce
 
 A full-stack e-commerce platform built with 
@@ -7,7 +6,7 @@ A full-stack e-commerce platform built with
 **React Native - Expo (mobile client)**
 
 Supports product management, image uploads, carts, and orders.
-```
+
 ---
 ## 🚀 Getting Started
 
