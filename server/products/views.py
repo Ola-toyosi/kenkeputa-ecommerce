@@ -27,8 +27,8 @@ class ProductViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """Override to ensure we're always using the base queryset"""
         if not self.request.user.is_staff:
-            qs = qs.filter(is_active=True)
-            return qs
+            queryset = queryset.filter(is_active=True)
+            return queryset
         return Product.objects.all().order_by("-created_at")
 
     @action(detail=False, methods=["get"], url_path="categories/list")
