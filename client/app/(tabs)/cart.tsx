@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useCallback, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,16 +7,20 @@ import {
   FlatList,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import CartItem from "@/components/cart/CartItem";
-import { useCart } from "@/hooks/use-cart";
+import { useCartContext } from "../context/CartContext";
 
 export default function CartScreen() {
-  const { cartItems, getCart, removeFromCart, updateCartItem } = useCart();
-  // console.log(cartItems);
-  useEffect(() => {
-    getCart();
-  }, [getCart]);
+  const { cart, cartItems, removeFromCart, updateCartItem, getCart } =
+    useCartContext();
+
+  useFocusEffect(
+    useCallback(() => {
+      getCart();
+    }, [])
+  );
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -43,6 +47,7 @@ export default function CartScreen() {
       ) : (
         <FlatList
           data={cartItems}
+          extraData={cartItems}
           keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => (
             <CartItem
@@ -54,14 +59,7 @@ export default function CartScreen() {
           ListFooterComponent={
             <View style={styles.footer}>
               <Text style={styles.totalLabel}>
-                Total: $
-                {cartItems
-                  .reduce(
-                    (sum, item) =>
-                      sum + item.product_detail.price * item.quantity,
-                    0
-                  )
-                  .toFixed(2)}
+                Total: ${cart?.subtotal?.toFixed(2) ?? "0.00"}
               </Text>
               <TouchableOpacity
                 style={styles.checkoutButton}

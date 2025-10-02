@@ -14,17 +14,19 @@ import {
 } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { Product } from "@/types/models";
+import { Product, CartItem as CartItemType } from "@/types/models";
 import { AuthContext } from "../context/AuthContext";
 import api from "../api/api";
 import Toast from "react-native-toast-message";
 import { useCart } from "@/hooks/use-cart";
+import { useCartContext } from "../context/CartContext";
 
 const { width } = Dimensions.get("window");
 
 const ProductDetailScreen: React.FC = () => {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useContext(AuthContext);
+  const { cartItems, updateCartItem } = useCartContext();
   const { addToCart } = useCart();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -59,34 +61,38 @@ const ProductDetailScreen: React.FC = () => {
     fetchProduct();
   }, [id]);
 
-  const handleAddToCart = async (): Promise<void> => {
-    if (!user) {
-      Toast.show({
-        type: "error",
-        text1: "Login Required",
-        text2: `Please login to add items to your cart.`,
-      });
-      return;
-    }
+  useEffect(() => {
+    console.log("🛒 cartItems:", cartItems);
+    console.log("📦 product:", product);
 
+    if (cartItems && product) {
+      const existingItem = cartItems.find(
+        (item: CartItemType) =>
+          (item.product?.id ?? item.product_detail?.id) === product.id
+      );
+      console.log("🔎 existingItem:", existingItem);
+      if (existingItem) {
+        setQuantity(existingItem.quantity);
+      }
+    }
+  }, [cartItems, product]);
+
+  const handleAddToCart = async (): Promise<void> => {
     if (!product) return;
 
-    if (quantity > product.inventory_count) {
-      Alert.alert(
-        "Insufficient Stock",
-        `Only ${product.inventory_count} items available in stock.`
-      );
+    const safeQuantity = Math.min(quantity, product.inventory_count);
+
+    if (safeQuantity < quantity) {
       Toast.show({
-        type: "error",
-        text1: "Insufficient Stock",
-        text2: `Only ${product.inventory_count} items available in stock.`,
+        type: "info",
+        text1: "Stock adjusted",
+        text2: `Quantity reduced to ${safeQuantity} due to stock limits.`,
       });
-      return;
     }
 
     setAddingToCart(true);
     try {
-      await addToCart(product.id, quantity);
+      await addToCart(product.id, safeQuantity);
       Toast.show({
         type: "success",
         text1: "Added to Cart 🛒",
@@ -104,28 +110,37 @@ const ProductDetailScreen: React.FC = () => {
   };
 
   const incrementQuantity = (): void => {
-    if (product && quantity < product.inventory_count) {
-      setQuantity((prev) => prev + 1);
-    }
+    if (!product) return;
+    const newQuantity = Math.min(quantity + 1, product.inventory_count);
+    setQuantity(newQuantity);
+    updateCartItem(product.id, newQuantity);
   };
 
   const decrementQuantity = (): void => {
-    if (quantity > 1) {
-      setQuantity((prev) => prev - 1);
-    }
+    if (!product) return;
+    const newQuantity = Math.max(1, quantity - 1);
+    setQuantity(newQuantity);
+    updateCartItem(product.id, newQuantity);
   };
 
   const handleQuantityChange = (text: string): void => {
-    const num = parseInt(text);
-    if (!isNaN(num) && num > 0) {
-      if (product && num > product.inventory_count) {
-        setQuantity(product.inventory_count);
-      } else {
-        setQuantity(num);
-      }
-    } else if (text === "") {
-      setQuantity(1);
+    if (!product) return;
+
+    let num = parseInt(text, 10);
+
+    if (isNaN(num) || num <= 0) {
+      num = 1; // fallback
+    } else if (num > product.inventory_count) {
+      num = product.inventory_count; // cap at stock
+      Toast.show({
+        type: "info",
+        text1: "Stock limit",
+        text2: `Maximum available: ${product.inventory_count}`,
+      });
     }
+
+    setQuantity(num);
+    updateCartItem(product.id, num);
   };
 
   const isOutOfStock = product?.inventory_count === 0;
@@ -402,8 +417,7 @@ const ProductDetailScreen: React.FC = () => {
         <TouchableOpacity
           style={[
             styles.addToCartButton,
-            (!user || isOutOfStock || addingToCart) &&
-              styles.addToCartButtonDisabled,
+            (isOutOfStock || addingToCart) && styles.addToCartButtonDisabled,
           ]}
           onPress={handleAddToCart}
           disabled={isOutOfStock || addingToCart}
@@ -731,7 +745,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   totalAmount: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: "bold",
     color: "#9b51e0",
   },

@@ -26,19 +26,38 @@ export interface Product {
 // -----------------------------
 // CartItem
 // -----------------------------
-export interface CartItem {
+export interface ProductDetail {
   id: number;
-  user: number | User;
-  product: Product;
-  quantity: number;
-  subtotal: number;
+  price: number;
+  title: string;
+  description: string;
+  inventory_count: number;
+  category: string;
+  image_url: string;
+  created_at: string;
+  updated_at: string;
 }
 
-export interface CartItemType {
+export interface CartItem {
   id: number;
-  product_detail: Product;
+  product: Product;
+  product_detail: ProductDetail;
   quantity: number;
-  subtotal: string;
+  subtotal: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Cart {
+  id: number;
+  user?: number;
+  session_key?: string;
+  items: CartItem[];
+  total_items: number;
+  subtotal: number;
+  total: number;
+  created_at: string;
+  updated_at: string;
 }
 
 // -----------------------------

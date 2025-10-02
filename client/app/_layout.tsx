@@ -3,6 +3,7 @@ import { useContext } from "react";
 import { AuthContext, AuthProvider } from "./context/AuthContext";
 import { StatusBar } from "react-native";
 import Toast from "react-native-toast-message";
+import { CartProvider } from "./context/CartContext";
 
 function RootLayoutNav() {
   const { user } = useContext(AuthContext);
@@ -34,10 +35,12 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   return (
-    <AuthProvider>
-      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
-      <RootLayoutNav />
-      <Toast />
-    </AuthProvider>
+    <CartProvider>
+      <AuthProvider>
+        <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+        <RootLayoutNav />
+        <Toast />
+      </AuthProvider>
+    </CartProvider>
   );
 }

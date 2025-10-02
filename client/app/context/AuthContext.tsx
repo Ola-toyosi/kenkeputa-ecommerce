@@ -2,6 +2,7 @@ import React, { createContext, useState, ReactNode } from "react";
 import api from "../api/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
+import { useCartContext } from "./CartContext";
 
 // Type definitions
 export interface User {
@@ -52,6 +53,7 @@ interface AuthProviderProps {
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
+  const { mergeCarts } = useCartContext();
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   // Check if user is already authenticated on app start
@@ -79,7 +81,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       });
 
       const { access, refresh } = response.data;
-      console.log(response);
 
       // Store tokens
       await AsyncStorage.setItem("access_token", access);
@@ -87,6 +88,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
       // Fetch user info
       await checkAuth();
+
+      // Merge guest cart into user cart
+      await mergeCarts();
+
       return true;
     } catch (err: any) {
       console.error("Login error:", err);
