@@ -460,7 +460,7 @@ EXPPO_BASE_URL=http://192.168.1.42:8000/api
 To quickly seed products for testing:
 
 ```bash
-python manage.py seed
+python seed.py
 ```
 
 ---
