@@ -61,11 +61,14 @@ export default function AdminProductsScreen() {
       formData.append("description", form.description || "");
 
       if (form.image?.uri) {
-        formData.append("image", {
+        // Create a proper file object for FormData
+        const imageFile = {
           uri: form.image.uri,
-          name: form.image.name || "product.jpg",
+          name: form.image.name || `product_${Date.now()}.jpg`,
           type: form.image.type || "image/jpeg",
-        } as any);
+        };
+
+        formData.append("image", imageFile as any);
       }
 
       if (editingProduct?.id) {
@@ -77,6 +80,56 @@ export default function AdminProductsScreen() {
       setModalVisible(false);
     } catch (err) {
       console.error("Submit error", err);
+    }
+  };
+
+  const pickImage = async () => {
+    try {
+      // Request permissions
+      const permissionResult =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (permissionResult.granted === false) {
+        alert("You've refused to allow this app to access your photos!");
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 1,
+      });
+
+      console.log("Image picker result:", result);
+
+      if (!result.canceled && result.assets[0]) {
+        const asset = result.assets[0];
+
+        // Extract filename from URI or use default
+        let fileName = "product.jpg";
+        if (asset.uri) {
+          // Extract filename from URI
+          const uriParts = asset.uri.split("/");
+          fileName = uriParts[uriParts.length - 1];
+        }
+
+        const imageData = {
+          uri: asset.uri,
+          name: fileName,
+          type: asset.type === "image" ? "image/jpeg" : `image/${asset.type}`,
+        };
+
+        console.log("Selected image:", imageData);
+
+        setForm({
+          ...form,
+          image: imageData,
+          image_url: asset.uri, // Show preview
+        });
+      }
+    } catch (error) {
+      console.error("Error picking image:", error);
     }
   };
 
@@ -112,24 +165,6 @@ export default function AdminProductsScreen() {
                 style={styles.productImage}
                 resizeMode="cover"
               />
-
-              {/* Category Badge */}
-              {/* {item.product_detail.category && (
-                      <View style={styles.categoryBadge}>
-                        <Text style={[styles.categoryText, { fontSize: 8 }]}>
-                          {item.product_detail.category}
-                        </Text>
-                      </View>
-                    )} */}
-
-              {/* Out of Stock Overlay */}
-              {/* {isOutOfStock && (
-                      <View style={styles.outOfStockOverlay}>
-                        <Text style={[styles.outOfStockText, { fontSize: 12 }]}>
-                          Out of Stock
-                        </Text>
-                      </View>
-                    )} */}
             </View>
             <View style={styles.card}>
               <Text style={styles.title}>{item.title}</Text>
@@ -223,28 +258,7 @@ export default function AdminProductsScreen() {
                 }}
               />
             ) : null}
-            <TouchableOpacity
-              style={styles.uploadButton}
-              onPress={async () => {
-                // Example: expo-image-picker
-                const result = await ImagePicker.launchImageLibraryAsync({
-                  mediaTypes: ImagePicker.MediaTypeOptions.Images,
-                  quality: 0.7,
-                });
-
-                if (!result.canceled) {
-                  const asset = result.assets[0];
-                  setForm({
-                    ...form,
-                    image: {
-                      uri: asset.uri,
-                      name: asset.fileName || "product.jpg",
-                      type: asset.type || "image/jpeg",
-                    },
-                  });
-                }
-              }}
-            >
+            <TouchableOpacity style={styles.uploadButton} onPress={pickImage}>
               <Text style={{ color: "#fff", fontWeight: "bold" }}>
                 {form.image_url ? "Change Image" : "Upload Image"}
               </Text>
