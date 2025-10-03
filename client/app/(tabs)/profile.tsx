@@ -13,6 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { AuthContext } from "../context/AuthContext";
 import Toast from "react-native-toast-message";
 import ConfirmModal from "@/components/confirm-modal";
+import CustomSafeAreaView from "@/components/view/SafeAreaView";
 
 const ProfileScreen: React.FC = () => {
   const { user, logout, checkAuth } = useContext(AuthContext);
@@ -97,179 +98,187 @@ const ProfileScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Profile</Text>
-        <TouchableOpacity
-          style={styles.settingsButton}
-          onPress={() => router.push("/profile")}
-        >
-          <Ionicons name="settings-outline" size={24} color="#333" />
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView
-        style={styles.scrollView}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={["#9b51e0"]}
-            tintColor="#9b51e0"
-          />
-        }
-      >
-        {/* User Info Card */}
-        <View style={styles.userCard}>
-          <View style={styles.avatarSection}>
-            <View style={styles.avatar}>
-              <Ionicons name="person" size={40} color="#9b51e0" />
-            </View>
-            <View style={styles.verifiedBadge}>
-              <Ionicons name="checkmark-circle" size={16} color="#2ed573" />
-            </View>
-          </View>
-
-          <View style={styles.userInfo}>
-            <Text style={styles.userName}>
-              {user.username || user.email.split("@")[0]}
-            </Text>
-            <Text style={styles.userEmail}>{user.email}</Text>
-            <View
-              style={[
-                styles.roleBadge,
-                { backgroundColor: getRoleColor() + "20" },
-              ]}
-            >
-              <Text style={[styles.roleText, { color: getRoleColor() }]}>
-                {getRoleText()}
-              </Text>
-            </View>
-          </View>
+      <CustomSafeAreaView>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Profile</Text>
+          <TouchableOpacity
+            style={styles.settingsButton}
+            onPress={() => router.push("/profile")}
+          >
+            <Ionicons name="settings-outline" size={24} color="#333" />
+          </TouchableOpacity>
         </View>
 
-        {/* Account Details */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Account Details</Text>
-          <View style={styles.detailsGrid}>
-            <View style={styles.detailItem}>
-              <Text style={styles.detailLabel}>User ID</Text>
-              <Text style={styles.detailValue}>{user.id}</Text>
-            </View>
-            <View style={styles.detailItem}>
-              <Text style={styles.detailLabel}>Account Type</Text>
-              <Text style={styles.detailValue}>{getRoleText()}</Text>
-            </View>
-            <View style={styles.detailItem}>
-              <Text style={styles.detailLabel}>Status</Text>
-              <View style={styles.statusContainer}>
+        <ScrollView
+          style={styles.scrollView}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={["#9b51e0"]}
+              tintColor="#9b51e0"
+            />
+          }
+        >
+          {/* User Info Card */}
+          <View style={styles.userCard}>
+            <View style={styles.avatarSection}>
+              <View style={styles.avatar}>
+                <Ionicons name="person" size={40} color="#9b51e0" />
+              </View>
+              <View style={styles.verifiedBadge}>
                 <Ionicons name="checkmark-circle" size={16} color="#2ed573" />
-                <Text style={styles.statusText}>Active</Text>
               </View>
             </View>
-            <View style={styles.detailItem}>
-              <Text style={styles.detailLabel}>Member Since</Text>
-              <Text style={styles.detailValue}>Recently</Text>
-            </View>
-          </View>
-        </View>
 
-        {/* Quick Actions */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
-          <View style={styles.actionsGrid}>
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() => router.push("/orders")}
-            >
-              <View style={[styles.actionIcon, { backgroundColor: "#9b51e0" }]}>
-                <Ionicons name="cart-outline" size={20} color="#fff" />
-              </View>
-              <Text style={styles.actionText}>My Orders</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() => router.push("/wishlist")}
-            >
+            <View style={styles.userInfo}>
+              <Text style={styles.userName}>
+                {user.username || user.email.split("@")[0]}
+              </Text>
+              <Text style={styles.userEmail}>{user.email}</Text>
               <View
-                style={[styles.actionIcon, { backgroundColor: "#F60F0FFF" }]}
+                style={[
+                  styles.roleBadge,
+                  { backgroundColor: getRoleColor() + "20" },
+                ]}
               >
-                <Ionicons name="heart-outline" size={20} color="#fff" />
+                <Text style={[styles.roleText, { color: getRoleColor() }]}>
+                  {getRoleText()}
+                </Text>
               </View>
-              <Text style={styles.actionText}>Wishlist</Text>
-            </TouchableOpacity>
+            </View>
           </View>
-        </View>
 
-        {/* Menu Items */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Account</Text>
-          <View style={styles.menuList}>
-            {menuItems
-              .filter((item) => item.show)
-              .map((item, index) => (
-                <TouchableOpacity
-                  key={index}
-                  style={styles.menuItem}
-                  onPress={item.onPress}
+          {/* Account Details */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Account Details</Text>
+            <View style={styles.detailsGrid}>
+              <View style={styles.detailItem}>
+                <Text style={styles.detailLabel}>User ID</Text>
+                <Text style={styles.detailValue}>{user.id}</Text>
+              </View>
+              <View style={styles.detailItem}>
+                <Text style={styles.detailLabel}>Account Type</Text>
+                <Text style={styles.detailValue}>{getRoleText()}</Text>
+              </View>
+              <View style={styles.detailItem}>
+                <Text style={styles.detailLabel}>Status</Text>
+                <View style={styles.statusContainer}>
+                  <Ionicons name="checkmark-circle" size={16} color="#2ed573" />
+                  <Text style={styles.statusText}>Active</Text>
+                </View>
+              </View>
+              <View style={styles.detailItem}>
+                <Text style={styles.detailLabel}>Member Since</Text>
+                <Text style={styles.detailValue}>Recently</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Quick Actions */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Quick Actions</Text>
+            <View style={styles.actionsGrid}>
+              <TouchableOpacity
+                style={styles.actionButton}
+                onPress={() => router.push("/orders")}
+              >
+                <View
+                  style={[styles.actionIcon, { backgroundColor: "#9b51e0" }]}
                 >
-                  <View style={styles.menuItemLeft}>
-                    <Ionicons name={item.icon as any} size={22} color="#666" />
-                    <Text style={styles.menuItemText}>{item.title}</Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={18} color="#ccc" />
-                </TouchableOpacity>
-              ))}
+                  <Ionicons name="cart-outline" size={20} color="#fff" />
+                </View>
+                <Text style={styles.actionText}>My Orders</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.actionButton}
+                onPress={() => router.push("/wishlist")}
+              >
+                <View
+                  style={[styles.actionIcon, { backgroundColor: "#F60F0FFF" }]}
+                >
+                  <Ionicons name="heart-outline" size={20} color="#fff" />
+                </View>
+                <Text style={styles.actionText}>Wishlist</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
 
-        {/* Support Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Support</Text>
-          <View style={styles.supportButtons}>
-            <TouchableOpacity style={styles.supportButton}>
-              <Ionicons name="help-circle-outline" size={20} color="#666" />
-              <Text style={styles.supportButtonText}>Help Center</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.supportButton}>
-              <Ionicons name="chatbubble-outline" size={20} color="#666" />
-              <Text style={styles.supportButtonText}>Contact Support</Text>
-            </TouchableOpacity>
+          {/* Menu Items */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Account</Text>
+            <View style={styles.menuList}>
+              {menuItems
+                .filter((item) => item.show)
+                .map((item, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={styles.menuItem}
+                    onPress={item.onPress}
+                  >
+                    <View style={styles.menuItemLeft}>
+                      <Ionicons
+                        name={item.icon as any}
+                        size={22}
+                        color="#666"
+                      />
+                      <Text style={styles.menuItemText}>{item.title}</Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={18} color="#ccc" />
+                  </TouchableOpacity>
+                ))}
+            </View>
           </View>
-        </View>
 
-        {/* Logout Button */}
-        <TouchableOpacity
-          style={styles.logoutButton}
-          onPress={handleLogout}
-          disabled={loggingOut}
-        >
-          {loggingOut ? (
-            <ActivityIndicator color="#ff4757" size="small" />
-          ) : (
-            <>
-              <Ionicons name="log-out-outline" size={20} color="#ff4757" />
-              <Text style={styles.logoutText}>Sign Out</Text>
-            </>
-          )}
-          <ConfirmModal
-            visible={showConfirm}
-            title="Logout"
-            message="Are you sure you want to logout?"
-            onCancel={() => setShowConfirm(false)}
-            onConfirm={() => {
-              setShowConfirm(false);
-              handleLogout();
-            }}
-          />
-        </TouchableOpacity>
+          {/* Support Section */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Support</Text>
+            <View style={styles.supportButtons}>
+              <TouchableOpacity style={styles.supportButton}>
+                <Ionicons name="help-circle-outline" size={20} color="#666" />
+                <Text style={styles.supportButtonText}>Help Center</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.supportButton}>
+                <Ionicons name="chatbubble-outline" size={20} color="#666" />
+                <Text style={styles.supportButtonText}>Contact Support</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
 
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>Kenkeputa App v1.0.0</Text>
-        </View>
-      </ScrollView>
+          {/* Logout Button */}
+          <TouchableOpacity
+            style={styles.logoutButton}
+            onPress={handleLogout}
+            disabled={loggingOut}
+          >
+            {loggingOut ? (
+              <ActivityIndicator color="#ff4757" size="small" />
+            ) : (
+              <>
+                <Ionicons name="log-out-outline" size={20} color="#ff4757" />
+                <Text style={styles.logoutText}>Sign Out</Text>
+              </>
+            )}
+            <ConfirmModal
+              visible={showConfirm}
+              title="Logout"
+              message="Are you sure you want to logout?"
+              onCancel={() => setShowConfirm(false)}
+              onConfirm={() => {
+                setShowConfirm(false);
+                handleLogout();
+              }}
+            />
+          </TouchableOpacity>
+
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>Kenkeputa App v1.0.0</Text>
+          </View>
+        </ScrollView>
+      </CustomSafeAreaView>
     </View>
   );
 };
@@ -284,8 +293,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 20,
+    paddingTop: 10,
+    paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: "#f0f0f0",
   },

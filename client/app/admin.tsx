@@ -17,6 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useAdminProducts, ProductType } from "./context/ProductsContext";
 import * as ImagePicker from "expo-image-picker";
+import CustomSafeAreaView from "@/components/view/SafeAreaView";
 
 export default function AdminProductsScreen() {
   const router = useRouter();
@@ -153,208 +154,208 @@ export default function AdminProductsScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#333" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Admin Products</Text>
-        <TouchableOpacity onPress={() => openModal()}>
-          <Ionicons name="add-circle" size={28} color="#2e86de" />
-        </TouchableOpacity>
-      </View>
-
-      {/* Products List */}
-      <FlatList
-        data={products}
-        keyExtractor={(item) => item.id!.toString()}
-        contentContainerStyle={styles.listContent}
-        renderItem={({ item }) => (
-          <View style={styles.productCard}>
-            <View style={styles.imageContainer}>
-              <Image
-                source={{
-                  uri:
-                    item.image_url ||
-                    "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=300&fit=crop",
-                }}
-                style={styles.productImage}
-                resizeMode="cover"
-              />
-            </View>
-            <View style={styles.productInfo}>
-              <Text style={styles.title}>{item.title}</Text>
-              <Text style={styles.detail}>
-                Category: {item.category || "N/A"}
-              </Text>
-              <Text style={styles.detail}>
-                Price: ${Number(item.price).toFixed(2)}
-              </Text>
-              <Text style={styles.detail}>Stock: {item.inventory_count}</Text>
-              <View style={styles.actions}>
-                <TouchableOpacity
-                  style={[styles.button, styles.editButton]}
-                  onPress={() => openModal(item)}
-                >
-                  <Text style={styles.buttonText}>Edit</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.button, styles.deleteButton]}
-                  onPress={() => deleteProduct(item.id!)}
-                >
-                  <Text style={styles.buttonText}>Delete</Text>
-                </TouchableOpacity>
+      <CustomSafeAreaView>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={24} color="#333" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Admin Products</Text>
+          <TouchableOpacity onPress={() => openModal()}>
+            <Ionicons name="add-circle" size={28} color="#2e86de" />
+          </TouchableOpacity>
+        </View>
+        {/* Products List */}
+        <FlatList
+          data={products}
+          keyExtractor={(item) => item.id!.toString()}
+          contentContainerStyle={styles.listContent}
+          renderItem={({ item }) => (
+            <View style={styles.productCard}>
+              <View style={styles.imageContainer}>
+                <Image
+                  source={{
+                    uri:
+                      item.image_url ||
+                      "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=300&fit=crop",
+                  }}
+                  style={styles.productImage}
+                  resizeMode="cover"
+                />
               </View>
-            </View>
-          </View>
-        )}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No products found</Text>
-            <TouchableOpacity
-              style={styles.addFirstButton}
-              onPress={() => openModal()}
-            >
-              <Text style={styles.addFirstButtonText}>
-                Add Your First Product
-              </Text>
-            </TouchableOpacity>
-          </View>
-        }
-      />
-
-      {/* Modal for Create/Edit */}
-      <Modal
-        visible={modalVisible}
-        animationType="slide"
-        transparent={true}
-        statusBarTranslucent={true}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalWrapper}>
-            {/* Header */}
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>
-                {editingProduct ? "Edit Product" : "Add Product"}
-              </Text>
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={() => setModalVisible(false)}
-              >
-                <Ionicons name="close" size={24} color="#666" />
-              </TouchableOpacity>
-            </View>
-
-            {/* Body with Scroll */}
-            <KeyboardAvoidingView
-              style={styles.modalBody}
-              behavior={Platform.OS === "ios" ? "padding" : "height"}
-              keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
-            >
-              <ScrollView
-                style={styles.scrollView}
-                contentContainerStyle={styles.scrollViewContent}
-                showsVerticalScrollIndicator={true}
-                keyboardShouldPersistTaps="handled"
-              >
-                {/* Title */}
-                <Text style={styles.label}>Title *</Text>
-                <TextInput
-                  style={styles.input}
-                  value={form.title}
-                  onChangeText={(t) => setForm({ ...form, title: t })}
-                  placeholder="Enter product title"
-                />
-
-                {/* Category */}
-                <Text style={styles.label}>Category *</Text>
-                <TextInput
-                  style={styles.input}
-                  value={form.category}
-                  onChangeText={(t) => setForm({ ...form, category: t })}
-                  placeholder="Enter product category"
-                />
-
-                {/* Price */}
-                <Text style={styles.label}>Price ($) *</Text>
-                <TextInput
-                  style={styles.input}
-                  keyboardType="numeric"
-                  value={form.price === 0 ? "" : form.price.toString()}
-                  onChangeText={(t) =>
-                    setForm({ ...form, price: parseFloat(t) || 0 })
-                  }
-                  placeholder="0.00"
-                />
-
-                {/* Stock */}
-                <Text style={styles.label}>Stock *</Text>
-                <TextInput
-                  style={styles.input}
-                  keyboardType="numeric"
-                  value={
-                    form.inventory_count === 0
-                      ? ""
-                      : form.inventory_count.toString()
-                  }
-                  onChangeText={(t) =>
-                    setForm({ ...form, inventory_count: parseInt(t) || 0 })
-                  }
-                  placeholder="0"
-                />
-
-                {/* Description */}
-                <Text style={styles.label}>Description</Text>
-                <TextInput
-                  style={[styles.input, styles.textArea]}
-                  multiline
-                  numberOfLines={4}
-                  value={form.description}
-                  onChangeText={(t) => setForm({ ...form, description: t })}
-                  placeholder="Enter product description"
-                  textAlignVertical="top"
-                />
-
-                {/* Image Upload */}
-                <Text style={styles.label}>Product Image</Text>
-                {form.image_url ? (
-                  <Image
-                    source={{ uri: form.image_url }}
-                    style={styles.imagePreview}
-                  />
-                ) : null}
-                <TouchableOpacity
-                  style={styles.uploadButton}
-                  onPress={pickImage}
-                >
-                  <Text style={styles.uploadButtonText}>
-                    {form.image_url ? "Change Image" : "Upload Image"}
-                  </Text>
-                </TouchableOpacity>
-
-                {/* Actions */}
-                <View style={styles.modalActions}>
+              <View style={styles.productInfo}>
+                <Text style={styles.title}>{item.title}</Text>
+                <Text style={styles.detail}>
+                  Category: {item.category || "N/A"}
+                </Text>
+                <Text style={styles.detail}>
+                  Price: ${Number(item.price).toFixed(2)}
+                </Text>
+                <Text style={styles.detail}>Stock: {item.inventory_count}</Text>
+                <View style={styles.actions}>
                   <TouchableOpacity
-                    style={[styles.modalButton, styles.cancelButton]}
-                    onPress={() => setModalVisible(false)}
+                    style={[styles.button, styles.editButton]}
+                    onPress={() => openModal(item)}
                   >
-                    <Text style={styles.modalButtonText}>Cancel</Text>
+                    <Text style={styles.buttonText}>Edit</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={[styles.modalButton, styles.saveButton]}
-                    onPress={handleSubmit}
+                    style={[styles.button, styles.deleteButton]}
+                    onPress={() => deleteProduct(item.id!)}
                   >
-                    <Text style={styles.modalButtonText}>
-                      {editingProduct ? "Update" : "Save"}
-                    </Text>
+                    <Text style={styles.buttonText}>Delete</Text>
                   </TouchableOpacity>
                 </View>
-              </ScrollView>
-            </KeyboardAvoidingView>
+              </View>
+            </View>
+          )}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No products found</Text>
+              <TouchableOpacity
+                style={styles.addFirstButton}
+                onPress={() => openModal()}
+              >
+                <Text style={styles.addFirstButtonText}>
+                  Add Your First Product
+                </Text>
+              </TouchableOpacity>
+            </View>
+          }
+        />
+        {/* Modal for Create/Edit */}
+        <Modal
+          visible={modalVisible}
+          animationType="slide"
+          transparent={true}
+          statusBarTranslucent={true}
+          onRequestClose={() => setModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalWrapper}>
+              {/* Header */}
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>
+                  {editingProduct ? "Edit Product" : "Add Product"}
+                </Text>
+                <TouchableOpacity
+                  style={styles.closeButton}
+                  onPress={() => setModalVisible(false)}
+                >
+                  <Ionicons name="close" size={24} color="#666" />
+                </TouchableOpacity>
+              </View>
+
+              {/* Body with Scroll */}
+              <KeyboardAvoidingView
+                style={styles.modalBody}
+                behavior={Platform.OS === "ios" ? "padding" : "height"}
+                keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
+              >
+                <ScrollView
+                  style={styles.scrollView}
+                  contentContainerStyle={styles.scrollViewContent}
+                  showsVerticalScrollIndicator={true}
+                  keyboardShouldPersistTaps="handled"
+                >
+                  {/* Title */}
+                  <Text style={styles.label}>Title *</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={form.title}
+                    onChangeText={(t) => setForm({ ...form, title: t })}
+                    placeholder="Enter product title"
+                  />
+
+                  {/* Category */}
+                  <Text style={styles.label}>Category *</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={form.category}
+                    onChangeText={(t) => setForm({ ...form, category: t })}
+                    placeholder="Enter product category"
+                  />
+
+                  {/* Price */}
+                  <Text style={styles.label}>Price ($) *</Text>
+                  <TextInput
+                    style={styles.input}
+                    keyboardType="numeric"
+                    value={form.price === 0 ? "" : form.price.toString()}
+                    onChangeText={(t) =>
+                      setForm({ ...form, price: parseFloat(t) || 0 })
+                    }
+                    placeholder="0.00"
+                  />
+
+                  {/* Stock */}
+                  <Text style={styles.label}>Stock *</Text>
+                  <TextInput
+                    style={styles.input}
+                    keyboardType="numeric"
+                    value={
+                      form.inventory_count === 0
+                        ? ""
+                        : form.inventory_count.toString()
+                    }
+                    onChangeText={(t) =>
+                      setForm({ ...form, inventory_count: parseInt(t) || 0 })
+                    }
+                    placeholder="0"
+                  />
+
+                  {/* Description */}
+                  <Text style={styles.label}>Description</Text>
+                  <TextInput
+                    style={[styles.input, styles.textArea]}
+                    multiline
+                    numberOfLines={4}
+                    value={form.description}
+                    onChangeText={(t) => setForm({ ...form, description: t })}
+                    placeholder="Enter product description"
+                    textAlignVertical="top"
+                  />
+
+                  {/* Image Upload */}
+                  <Text style={styles.label}>Product Image</Text>
+                  {form.image_url ? (
+                    <Image
+                      source={{ uri: form.image_url }}
+                      style={styles.imagePreview}
+                    />
+                  ) : null}
+                  <TouchableOpacity
+                    style={styles.uploadButton}
+                    onPress={pickImage}
+                  >
+                    <Text style={styles.uploadButtonText}>
+                      {form.image_url ? "Change Image" : "Upload Image"}
+                    </Text>
+                  </TouchableOpacity>
+
+                  {/* Actions */}
+                  <View style={styles.modalActions}>
+                    <TouchableOpacity
+                      style={[styles.modalButton, styles.cancelButton]}
+                      onPress={() => setModalVisible(false)}
+                    >
+                      <Text style={styles.modalButtonText}>Cancel</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.modalButton, styles.saveButton]}
+                      onPress={handleSubmit}
+                    >
+                      <Text style={styles.modalButtonText}>
+                        {editingProduct ? "Update" : "Save"}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </ScrollView>
+              </KeyboardAvoidingView>
+            </View>
           </View>
-        </View>
-      </Modal>
+        </Modal>
+      </CustomSafeAreaView>
     </View>
   );
 }

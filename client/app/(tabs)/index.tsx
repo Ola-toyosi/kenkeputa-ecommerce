@@ -14,6 +14,7 @@ import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Product } from "@/types/models";
 import api from "../api/api";
+import CustomSafeAreaView from "@/components/view/SafeAreaView";
 
 const { width } = Dimensions.get("window");
 
@@ -185,114 +186,116 @@ export default function HomeScreen() {
   );
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>Kenkeputa</Text>
-          <View style={styles.headerActions}>
-            <TouchableOpacity
-              style={styles.headerButton}
-              onPress={() => router.push("/search")}
-            >
-              <Ionicons name="search" size={20} color="#333" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.headerButton}
-              onPress={() => router.push("/cart")}
-            >
-              <Ionicons name="cart" size={20} color="#333" />
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-
-      {/* Hero Section */}
-      <View style={styles.heroSection}>
-        <View style={styles.heroContent}>
-          <Text style={styles.heroTitle}>Discover Amazing Products</Text>
-          <Text style={styles.heroSubtitle}>
-            Shop the latest trends with fast delivery and secure payments
-          </Text>
-        </View>
-      </View>
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#9b51e0" />
-          <Text style={styles.loadingText}>
-            Discovering amazing products...
-          </Text>
-        </View>
-      ) : (
-        <ScrollView showsVerticalScrollIndicator={false}>
-          {/* Featured Categories */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Shop by Category</Text>
-              <TouchableOpacity onPress={() => router.push("/products")}>
-                <Text style={styles.seeAllText}>View All</Text>
-              </TouchableOpacity>
-            </View>
-            <View style={styles.categoriesGrid}>
-              {FEATURED_CATEGORIES.slice(0, 4).map(renderCategoryCard)}
-            </View>
-          </View>
-
-          {/* Featured Products */}
-          {featuredProducts.length > 0 && (
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Featured Products</Text>
-                <TouchableOpacity onPress={() => router.push("/products")}>
-                  <Text style={styles.seeAllText}>See All</Text>
-                </TouchableOpacity>
-              </View>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.featuredProductsScroll}
+    <CustomSafeAreaView>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.headerContent}>
+            <Text style={styles.headerTitle}>Kenkeputa</Text>
+            <View style={styles.headerActions}>
+              <TouchableOpacity
+                style={styles.headerButton}
+                onPress={() => router.push("/search")}
               >
-                {featuredProducts.map(renderProductCard)}
-              </ScrollView>
-            </View>
-          )}
-
-          {/* All Categories */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>More Categories</Text>
-              <TouchableOpacity onPress={() => router.push("/products")}>
-                <Text style={styles.seeAllText}>Explore</Text>
+                <Ionicons name="search" size={20} color="#333" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.headerButton}
+                onPress={() => router.push("/cart")}
+              >
+                <Ionicons name="cart" size={20} color="#333" />
               </TouchableOpacity>
             </View>
-            <View style={styles.categoriesGrid}>
-              {FEATURED_CATEGORIES.slice(4).map(renderCategoryCard)}
-            </View>
           </View>
+        </View>
 
-          {/* Trending Products */}
-          {trendingProducts.length > 0 && (
+        {/* Hero Section */}
+        <View style={styles.heroSection}>
+          <View style={styles.heroContent}>
+            <Text style={styles.heroTitle}>Discover Amazing Products</Text>
+            <Text style={styles.heroSubtitle}>
+              Shop the latest trends with fast delivery and secure payments
+            </Text>
+          </View>
+        </View>
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#9b51e0" />
+            <Text style={styles.loadingText}>
+              Discovering amazing products...
+            </Text>
+          </View>
+        ) : (
+          <ScrollView showsVerticalScrollIndicator={false}>
+            {/* Featured Categories */}
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Trending Now</Text>
+                <Text style={styles.sectionTitle}>Shop by Category</Text>
                 <TouchableOpacity onPress={() => router.push("/products")}>
                   <Text style={styles.seeAllText}>View All</Text>
                 </TouchableOpacity>
               </View>
-              <FlatList
-                data={trendingProducts}
-                renderItem={renderTrendingProduct}
-                keyExtractor={(item) => item.id.toString()}
-                numColumns={2}
-                scrollEnabled={false}
-                contentContainerStyle={styles.trendingGrid}
-                columnWrapperStyle={styles.trendingColumnWrapper}
-              />
+              <View style={styles.categoriesGrid}>
+                {FEATURED_CATEGORIES.slice(0, 4).map(renderCategoryCard)}
+              </View>
             </View>
-          )}
-        </ScrollView>
-      )}
-    </ScrollView>
+
+            {/* Featured Products */}
+            {featuredProducts.length > 0 && (
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionTitle}>Featured Products</Text>
+                  <TouchableOpacity onPress={() => router.push("/products")}>
+                    <Text style={styles.seeAllText}>See All</Text>
+                  </TouchableOpacity>
+                </View>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.featuredProductsScroll}
+                >
+                  {featuredProducts.map(renderProductCard)}
+                </ScrollView>
+              </View>
+            )}
+
+            {/* All Categories */}
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>More Categories</Text>
+                <TouchableOpacity onPress={() => router.push("/products")}>
+                  <Text style={styles.seeAllText}>Explore</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.categoriesGrid}>
+                {FEATURED_CATEGORIES.slice(4).map(renderCategoryCard)}
+              </View>
+            </View>
+
+            {/* Trending Products */}
+            {trendingProducts.length > 0 && (
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionTitle}>Trending Now</Text>
+                  <TouchableOpacity onPress={() => router.push("/products")}>
+                    <Text style={styles.seeAllText}>View All</Text>
+                  </TouchableOpacity>
+                </View>
+                <FlatList
+                  data={trendingProducts}
+                  renderItem={renderTrendingProduct}
+                  keyExtractor={(item) => item.id.toString()}
+                  numColumns={2}
+                  scrollEnabled={false}
+                  contentContainerStyle={styles.trendingGrid}
+                  columnWrapperStyle={styles.trendingColumnWrapper}
+                />
+              </View>
+            )}
+          </ScrollView>
+        )}
+      </ScrollView>
+    </CustomSafeAreaView>
   );
 }
 
@@ -315,7 +318,7 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: "#fff",
-    paddingTop: 20,
+    paddingTop: 10,
     paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: "#f0f0f0",

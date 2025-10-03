@@ -15,6 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Product } from "@/types/models";
 import api from "./api/api";
 import { AuthContext } from "./context/AuthContext";
+import CustomSafeAreaView from "@/components/view/SafeAreaView";
 
 const { width } = Dimensions.get("window");
 
@@ -204,240 +205,244 @@ export default function WelcomeScreen() {
   }
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Hero Section */}
-      <View style={styles.heroSection}>
-        {user ? (
-          <View style={styles.heroContent}>
-            <Text style={styles.heroTitle}>
-              Welcome back, {user.username} 👋
-            </Text>
-            <Text style={styles.heroSubtitle}>Here are some picks for you</Text>
-          </View>
-        ) : (
-          <View style={styles.heroContent}>
-            <Text style={styles.heroTitle}>Welcome to{"\n"}Kenkeputa</Text>
-            <Text style={styles.heroSubtitle}>
-              Discover amazing products at unbeatable prices. Shop the latest
-              trends with fast delivery and secure payments.
-            </Text>
-
-            <View style={styles.heroImageContainer}>
-              <Image
-                source={{
-                  uri: "https://images.unsplash.com/photo-1607082350899-7e105aa886ae?w=400&h=300&fit=crop",
-                }}
-                style={styles.heroImage}
-              />
+    <CustomSafeAreaView>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        {/* Hero Section */}
+        <View style={styles.heroSection}>
+          {user ? (
+            <View style={styles.heroContent}>
+              <Text style={styles.heroTitle}>
+                Welcome back, {user.username} 👋
+              </Text>
+              <Text style={styles.heroSubtitle}>
+                Here are some picks for you
+              </Text>
             </View>
+          ) : (
+            <View style={styles.heroContent}>
+              <Text style={styles.heroTitle}>Welcome to{"\n"}Kenkeputa</Text>
+              <Text style={styles.heroSubtitle}>
+                Discover amazing products at unbeatable prices. Shop the latest
+                trends with fast delivery and secure payments.
+              </Text>
 
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity
-                style={styles.primaryButton}
-                onPress={() => router.push("/(auth)/signup")}
-              >
-                <Text style={styles.primaryButtonText}>Get Started</Text>
-                <Ionicons name="arrow-forward" size={20} color="#fff" />
-              </TouchableOpacity>
+              <View style={styles.heroImageContainer}>
+                <Image
+                  source={{
+                    uri: "https://images.unsplash.com/photo-1607082350899-7e105aa886ae?w=400&h=300&fit=crop",
+                  }}
+                  style={styles.heroImage}
+                />
+              </View>
 
-              <TouchableOpacity
-                style={styles.secondaryButton}
-                onPress={() => router.push("/(auth)/login")}
-              >
-                <Text style={styles.secondaryButtonText}>
-                  I have an account
-                </Text>
-              </TouchableOpacity>
+              <View style={styles.buttonContainer}>
+                <TouchableOpacity
+                  style={styles.primaryButton}
+                  onPress={() => router.push("/(auth)/signup")}
+                >
+                  <Text style={styles.primaryButtonText}>Get Started</Text>
+                  <Ionicons name="arrow-forward" size={20} color="#fff" />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.secondaryButton}
+                  onPress={() => router.push("/(auth)/login")}
+                >
+                  <Text style={styles.secondaryButtonText}>
+                    I have an account
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
-        )}
-      </View>
-
-      {/* Featured Categories */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Shop by Category</Text>
-          <TouchableOpacity onPress={() => router.push("/products")}>
-            <Text style={styles.seeAllText}>View All</Text>
-          </TouchableOpacity>
+          )}
         </View>
-        <View style={styles.categoriesGrid}>
-          {FEATURED_CATEGORIES.slice(0, 4).map(renderCategoryCard)}
-        </View>
-      </View>
 
-      {/* Featured Products */}
-      {featuredProducts.length > 0 && (
+        {/* Featured Categories */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Featured Products</Text>
-            <TouchableOpacity onPress={() => router.push("/products")}>
-              <Text style={styles.seeAllText}>See All</Text>
-            </TouchableOpacity>
-          </View>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.featuredProductsScroll}
-          >
-            {featuredProducts.map(renderProductCard)}
-          </ScrollView>
-        </View>
-      )}
-
-      {/* All Categories */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>More Categories</Text>
-          <TouchableOpacity onPress={() => router.push("/products")}>
-            <Text style={styles.seeAllText}>Explore</Text>
-          </TouchableOpacity>
-        </View>
-        <View style={styles.categoriesGrid}>
-          {FEATURED_CATEGORIES.slice(4).map(renderCategoryCard)}
-        </View>
-      </View>
-
-      {/* Trending Products */}
-      {trendingProducts.length > 0 && (
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Trending Now</Text>
+            <Text style={styles.sectionTitle}>Shop by Category</Text>
             <TouchableOpacity onPress={() => router.push("/products")}>
               <Text style={styles.seeAllText}>View All</Text>
             </TouchableOpacity>
           </View>
-          <FlatList
-            data={trendingProducts}
-            renderItem={renderTrendingProduct}
-            keyExtractor={(item) => item.id.toString()}
-            numColumns={2}
-            scrollEnabled={false}
-            contentContainerStyle={styles.trendingGrid}
-            columnWrapperStyle={styles.trendingColumnWrapper}
-          />
-        </View>
-      )}
-
-      {/* Features Section */}
-      <View style={styles.featuresSection}>
-        <Text style={styles.sectionTitle}>Why Choose Kenkeputa?</Text>
-
-        <View style={styles.featuresGrid}>
-          <View style={styles.featureCard}>
-            <View
-              style={[
-                styles.featureIcon,
-                { backgroundColor: "rgba(155, 81, 224, 0.1)" },
-              ]}
-            >
-              <Ionicons name="shield-checkmark" size={32} color="#9b51e0" />
-            </View>
-            <Text style={styles.featureTitle}>Secure Shopping</Text>
-            <Text style={styles.featureDescription}>
-              Your data and payments are protected with bank-level security
-            </Text>
-          </View>
-
-          <View style={styles.featureCard}>
-            <View
-              style={[
-                styles.featureIcon,
-                { backgroundColor: "rgba(46, 213, 115, 0.1)" },
-              ]}
-            >
-              <Ionicons name="rocket" size={32} color="#2ed573" />
-            </View>
-            <Text style={styles.featureTitle}>Fast Delivery</Text>
-            <Text style={styles.featureDescription}>
-              Get your orders delivered in 2-3 business days
-            </Text>
-          </View>
-
-          <View style={styles.featureCard}>
-            <View
-              style={[
-                styles.featureIcon,
-                { backgroundColor: "rgba(255, 165, 2, 0.1)" },
-              ]}
-            >
-              <Ionicons name="headset" size={32} color="#ffa502" />
-            </View>
-            <Text style={styles.featureTitle}>24/7 Support</Text>
-            <Text style={styles.featureDescription}>
-              Our support team is always here to help you
-            </Text>
-          </View>
-
-          <View style={styles.featureCard}>
-            <View
-              style={[
-                styles.featureIcon,
-                { backgroundColor: "rgba(30, 144, 255, 0.1)" },
-              ]}
-            >
-              <Ionicons name="refresh" size={32} color="#1e90ff" />
-            </View>
-            <Text style={styles.featureTitle}>Easy Returns</Text>
-            <Text style={styles.featureDescription}>
-              Not happy? Return within 30 days, no questions asked
-            </Text>
+          <View style={styles.categoriesGrid}>
+            {FEATURED_CATEGORIES.slice(0, 4).map(renderCategoryCard)}
           </View>
         </View>
-      </View>
 
-      {/* CTA Section */}
-      <View style={styles.ctaSection}>
-        {user ? (
-          <>
-            <Text style={styles.ctaTitle}>
-              Welcome back, {user.username}! 🎉
-            </Text>
-            <Text style={styles.ctaSubtitle}>
-              What would you like to do today?
-            </Text>
-
-            <TouchableOpacity
-              style={styles.ctaButton}
-              onPress={() => router.push("/cart")}
+        {/* Featured Products */}
+        {featuredProducts.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Featured Products</Text>
+              <TouchableOpacity onPress={() => router.push("/products")}>
+                <Text style={styles.seeAllText}>See All</Text>
+              </TouchableOpacity>
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.featuredProductsScroll}
             >
-              <Text style={styles.ctaButtonText}>Go to Cart</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.ctaButton]}
-              onPress={() => router.push("/profile")}
-            >
-              <Text style={styles.ctaButtonText}>View Profile</Text>
-            </TouchableOpacity>
-          </>
-        ) : (
-          <>
-            <Text style={styles.ctaTitle}>Ready to Start Shopping?</Text>
-            <Text style={styles.ctaSubtitle}>
-              Join thousands of happy customers shopping on Kenkeputa
-            </Text>
-
-            <TouchableOpacity
-              style={styles.ctaButton}
-              onPress={() => router.push("/(auth)/signup")}
-            >
-              <Text style={styles.ctaButtonText}>Create Account</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.loginLink}
-              onPress={() => router.push("/(auth)/login")}
-            >
-              <Text style={styles.loginLinkText}>
-                Already have an account?{" "}
-                <Text style={styles.loginLinkBold}>Sign In</Text>
-              </Text>
-            </TouchableOpacity>
-          </>
+              {featuredProducts.map(renderProductCard)}
+            </ScrollView>
+          </View>
         )}
-      </View>
-    </ScrollView>
+
+        {/* All Categories */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>More Categories</Text>
+            <TouchableOpacity onPress={() => router.push("/products")}>
+              <Text style={styles.seeAllText}>Explore</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.categoriesGrid}>
+            {FEATURED_CATEGORIES.slice(4).map(renderCategoryCard)}
+          </View>
+        </View>
+
+        {/* Trending Products */}
+        {trendingProducts.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Trending Now</Text>
+              <TouchableOpacity onPress={() => router.push("/products")}>
+                <Text style={styles.seeAllText}>View All</Text>
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={trendingProducts}
+              renderItem={renderTrendingProduct}
+              keyExtractor={(item) => item.id.toString()}
+              numColumns={2}
+              scrollEnabled={false}
+              contentContainerStyle={styles.trendingGrid}
+              columnWrapperStyle={styles.trendingColumnWrapper}
+            />
+          </View>
+        )}
+
+        {/* Features Section */}
+        <View style={styles.featuresSection}>
+          <Text style={styles.sectionTitle}>Why Choose Kenkeputa?</Text>
+
+          <View style={styles.featuresGrid}>
+            <View style={styles.featureCard}>
+              <View
+                style={[
+                  styles.featureIcon,
+                  { backgroundColor: "rgba(155, 81, 224, 0.1)" },
+                ]}
+              >
+                <Ionicons name="shield-checkmark" size={32} color="#9b51e0" />
+              </View>
+              <Text style={styles.featureTitle}>Secure Shopping</Text>
+              <Text style={styles.featureDescription}>
+                Your data and payments are protected with bank-level security
+              </Text>
+            </View>
+
+            <View style={styles.featureCard}>
+              <View
+                style={[
+                  styles.featureIcon,
+                  { backgroundColor: "rgba(46, 213, 115, 0.1)" },
+                ]}
+              >
+                <Ionicons name="rocket" size={32} color="#2ed573" />
+              </View>
+              <Text style={styles.featureTitle}>Fast Delivery</Text>
+              <Text style={styles.featureDescription}>
+                Get your orders delivered in 2-3 business days
+              </Text>
+            </View>
+
+            <View style={styles.featureCard}>
+              <View
+                style={[
+                  styles.featureIcon,
+                  { backgroundColor: "rgba(255, 165, 2, 0.1)" },
+                ]}
+              >
+                <Ionicons name="headset" size={32} color="#ffa502" />
+              </View>
+              <Text style={styles.featureTitle}>24/7 Support</Text>
+              <Text style={styles.featureDescription}>
+                Our support team is always here to help you
+              </Text>
+            </View>
+
+            <View style={styles.featureCard}>
+              <View
+                style={[
+                  styles.featureIcon,
+                  { backgroundColor: "rgba(30, 144, 255, 0.1)" },
+                ]}
+              >
+                <Ionicons name="refresh" size={32} color="#1e90ff" />
+              </View>
+              <Text style={styles.featureTitle}>Easy Returns</Text>
+              <Text style={styles.featureDescription}>
+                Not happy? Return within 30 days, no questions asked
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* CTA Section */}
+        <View style={styles.ctaSection}>
+          {user ? (
+            <>
+              <Text style={styles.ctaTitle}>
+                Welcome back, {user.username}! 🎉
+              </Text>
+              <Text style={styles.ctaSubtitle}>
+                What would you like to do today?
+              </Text>
+
+              <TouchableOpacity
+                style={styles.ctaButton}
+                onPress={() => router.push("/cart")}
+              >
+                <Text style={styles.ctaButtonText}>Go to Cart</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.ctaButton]}
+                onPress={() => router.push("/profile")}
+              >
+                <Text style={styles.ctaButtonText}>View Profile</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <Text style={styles.ctaTitle}>Ready to Start Shopping?</Text>
+              <Text style={styles.ctaSubtitle}>
+                Join thousands of happy customers shopping on Kenkeputa
+              </Text>
+
+              <TouchableOpacity
+                style={styles.ctaButton}
+                onPress={() => router.push("/(auth)/signup")}
+              >
+                <Text style={styles.ctaButtonText}>Create Account</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.loginLink}
+                onPress={() => router.push("/(auth)/login")}
+              >
+                <Text style={styles.loginLinkText}>
+                  Already have an account?{" "}
+                  <Text style={styles.loginLinkBold}>Sign In</Text>
+                </Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
+      </ScrollView>
+    </CustomSafeAreaView>
   );
 }
 

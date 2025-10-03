@@ -16,6 +16,7 @@ import { Ionicons } from "@expo/vector-icons";
 import ProductCard from "@/components/products/ProductCard";
 import { Product } from "@/types/models";
 import api from "@/app/api/api";
+import CustomSafeAreaView from "@/components/view/SafeAreaView";
 
 interface ProductsResponse {
   results: Product[];
@@ -174,7 +175,7 @@ export default function ProductListScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <CustomSafeAreaView style={styles.container}>
       {/* Animated Header */}
       <Animated.View style={[styles.header, { opacity: 100 }]}>
         <View style={styles.headerContent}>
@@ -281,7 +282,7 @@ export default function ProductListScreen() {
           </View>
         )}
       </View>
-    </View>
+    </CustomSafeAreaView>
   );
 }
 
@@ -297,7 +298,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: "#fff",
-    paddingTop: 20,
+    paddingTop: 10,
     paddingBottom: 12,
     zIndex: 1000,
     borderBottomWidth: 1,

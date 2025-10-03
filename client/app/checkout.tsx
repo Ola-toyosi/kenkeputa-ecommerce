@@ -14,6 +14,7 @@ import Toast from "react-native-toast-message";
 import { CartItem as CartItemType } from "@/types/models";
 import { useCartContext } from "./context/CartContext";
 import AddressModal from "@/components/checkout/AddressModal";
+import CustomSafeAreaView from "@/components/view/SafeAreaView";
 
 const CheckoutScreen: React.FC = () => {
   const { cart, cartItems, getCart } = useCartContext();
@@ -98,7 +99,7 @@ const CheckoutScreen: React.FC = () => {
   }
 
   return (
-    <>
+    <CustomSafeAreaView>
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
@@ -279,7 +280,7 @@ const CheckoutScreen: React.FC = () => {
         onClose={() => setAddressModalVisible(false)}
         onSave={(addr) => setShippingAddress(addr)}
       />
-    </>
+    </CustomSafeAreaView>
   );
 };
 

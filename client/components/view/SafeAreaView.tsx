@@ -18,10 +18,11 @@ export default function CustomSafeAreaView({
       style={[
         styles.container,
         {
-          paddingTop: insets.top,
-          paddingBottom: insets.bottom,
+          paddingTop: insets.top - 60,
+          paddingBottom: insets.bottom - 40,
           paddingLeft: insets.left,
           paddingRight: insets.right,
+          // marginTop: 20,
         },
         style,
       ]}
