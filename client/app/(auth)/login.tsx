@@ -9,7 +9,6 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
-  Alert,
 } from "react-native";
 import { AuthContext } from "../context/AuthContext";
 import Toast from "react-native-toast-message";

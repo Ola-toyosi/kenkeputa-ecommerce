@@ -3,6 +3,7 @@ import api from "../api/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import { useCartContext } from "./CartContext";
+import Toast from "react-native-toast-message";
 
 // Type definitions
 export interface User {
@@ -109,6 +110,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
       const { access, refresh } = response.data;
 
+      Toast.show({
+        type: "success",
+        text1: "Registered successfully",
+        text2: "Welome to the Kenkeputa Family!",
+      });
+
       // Store tokens
       await AsyncStorage.setItem("access_token", access);
       await AsyncStorage.setItem("refresh_token", refresh);
@@ -121,12 +128,27 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
       // Handle different error responses
       if (err.response?.data?.email) {
+        Toast.show({
+          type: "error",
+          text1: "Registration failed",
+          text2: "Email already exists",
+        });
         throw new Error("Email already exists");
       } else if (err.response?.data?.username) {
+        Toast.show({
+          type: "error",
+          text1: "Registration failed",
+          text2: "Username already exists",
+        });
         throw new Error("Username already exists");
       } else {
         const errorMessage =
           err.response?.data?.detail || "Registration failed";
+        Toast.show({
+          type: "error",
+          text1: "Registration failed",
+          text2: `${errorMessage}`,
+        });
         throw new Error(errorMessage);
       }
     } finally {

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   View,
   Text,
@@ -9,15 +9,25 @@ import {
   TextInput,
   StyleSheet,
   Image,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { useAdminProducts, ProductType } from "./context/ProductsContext";
 import * as ImagePicker from "expo-image-picker";
 
 export default function AdminProductsScreen() {
-  const { products, loading, createProduct, updateProduct, deleteProduct } =
-    useAdminProducts();
+  const router = useRouter();
+  const {
+    products,
+    loading,
+    fetchProducts,
+    createProduct,
+    updateProduct,
+    deleteProduct,
+  } = useAdminProducts();
   const [modalVisible, setModalVisible] = useState(false);
   const [editingProduct, setEditingProduct] = useState<ProductType | null>(
     null
@@ -30,12 +40,20 @@ export default function AdminProductsScreen() {
     description: "",
     image_url: "",
   });
-  const router = useRouter();
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchProducts();
+    }, []) // Add dependency
+  );
 
   const openModal = (product?: ProductType) => {
     if (product) {
       setEditingProduct(product);
-      setForm(product);
+      setForm({
+        ...product,
+        image_url: product.image_url || "",
+      });
     } else {
       setEditingProduct(null);
       setForm({
@@ -61,7 +79,6 @@ export default function AdminProductsScreen() {
       formData.append("description", form.description || "");
 
       if (form.image?.uri) {
-        // Create a proper file object for FormData
         const imageFile = {
           uri: form.image.uri,
           name: form.image.name || `product_${Date.now()}.jpg`,
@@ -78,6 +95,7 @@ export default function AdminProductsScreen() {
       }
 
       setModalVisible(false);
+      fetchProducts();
     } catch (err) {
       console.error("Submit error", err);
     }
@@ -85,7 +103,6 @@ export default function AdminProductsScreen() {
 
   const pickImage = async () => {
     try {
-      // Request permissions
       const permissionResult =
         await ImagePicker.requestMediaLibraryPermissionsAsync();
 
@@ -101,15 +118,10 @@ export default function AdminProductsScreen() {
         quality: 1,
       });
 
-      console.log("Image picker result:", result);
-
       if (!result.canceled && result.assets[0]) {
         const asset = result.assets[0];
-
-        // Extract filename from URI or use default
         let fileName = "product.jpg";
         if (asset.uri) {
-          // Extract filename from URI
           const uriParts = asset.uri.split("/");
           fileName = uriParts[uriParts.length - 1];
         }
@@ -117,15 +129,13 @@ export default function AdminProductsScreen() {
         const imageData = {
           uri: asset.uri,
           name: fileName,
-          type: asset.type === "image" ? "image/jpeg" : `image/${asset.type}`,
+          type: "image/jpeg", // Simplified type handling
         };
-
-        console.log("Selected image:", imageData);
 
         setForm({
           ...form,
           image: imageData,
-          image_url: asset.uri, // Show preview
+          image_url: asset.uri,
         });
       }
     } catch (error) {
@@ -133,11 +143,16 @@ export default function AdminProductsScreen() {
     }
   };
 
-  if (loading)
-    return <ActivityIndicator style={{ marginTop: 50 }} size="large" />;
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#2e86de" />
+      </View>
+    );
+  }
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
@@ -149,12 +164,13 @@ export default function AdminProductsScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* Products List */}
       <FlatList
         data={products}
         keyExtractor={(item) => item.id!.toString()}
-        contentContainerStyle={{ padding: 8, gap: 16 }}
+        contentContainerStyle={styles.listContent}
         renderItem={({ item }) => (
-          <View style={styles.container}>
+          <View style={styles.productCard}>
             <View style={styles.imageContainer}>
               <Image
                 source={{
@@ -166,11 +182,15 @@ export default function AdminProductsScreen() {
                 resizeMode="cover"
               />
             </View>
-            <View style={styles.card}>
+            <View style={styles.productInfo}>
               <Text style={styles.title}>{item.title}</Text>
-              <Text>Category: {item.category || "N/A"}</Text>
-              <Text>Price: ${Number(item.price).toFixed(2)}</Text>
-              <Text>Stock: {item.inventory_count}</Text>
+              <Text style={styles.detail}>
+                Category: {item.category || "N/A"}
+              </Text>
+              <Text style={styles.detail}>
+                Price: ${Number(item.price).toFixed(2)}
+              </Text>
+              <Text style={styles.detail}>Stock: {item.inventory_count}</Text>
               <View style={styles.actions}>
                 <TouchableOpacity
                   style={[styles.button, styles.editButton]}
@@ -188,97 +208,150 @@ export default function AdminProductsScreen() {
             </View>
           </View>
         )}
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>No products found</Text>
+            <TouchableOpacity
+              style={styles.addFirstButton}
+              onPress={() => openModal()}
+            >
+              <Text style={styles.addFirstButtonText}>
+                Add Your First Product
+              </Text>
+            </TouchableOpacity>
+          </View>
+        }
       />
 
       {/* Modal for Create/Edit */}
-      <Modal visible={modalVisible} animationType="slide" transparent>
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>
-              {editingProduct ? "Edit Product" : "Add Product"}
-            </Text>
-
-            {/* Title */}
-            <Text style={styles.label}>Title</Text>
-            <TextInput
-              style={styles.input}
-              value={form.title}
-              onChangeText={(t) => setForm({ ...form, title: t })}
-            />
-
-            {/* Category */}
-            <Text style={styles.label}>Category</Text>
-            <TextInput
-              style={styles.input}
-              value={form.category}
-              onChangeText={(t) => setForm({ ...form, category: t })}
-            />
-
-            {/* Price */}
-            <Text style={styles.label}>Price ($)</Text>
-            <TextInput
-              style={styles.input}
-              keyboardType="numeric"
-              value={form.price.toString()}
-              onChangeText={(t) =>
-                setForm({ ...form, price: parseFloat(t) || 0 })
-              }
-            />
-
-            {/* Stock */}
-            <Text style={styles.label}>Stock</Text>
-            <TextInput
-              style={styles.input}
-              keyboardType="numeric"
-              value={form.inventory_count.toString()}
-              onChangeText={(t) =>
-                setForm({ ...form, inventory_count: parseInt(t) || 0 })
-              }
-            />
-
-            {/* Description */}
-            <Text style={styles.label}>Description</Text>
-            <TextInput
-              style={[styles.input, { height: 80 }]}
-              multiline
-              value={form.description}
-              onChangeText={(t) => setForm({ ...form, description: t })}
-            />
-
-            {/* Image Upload */}
-            <Text style={styles.label}>Product Image</Text>
-            {form.image_url ? (
-              <Image
-                source={{ uri: form.image_url }}
-                style={{
-                  width: 100,
-                  height: 100,
-                  marginBottom: 10,
-                  borderRadius: 8,
-                }}
-              />
-            ) : null}
-            <TouchableOpacity style={styles.uploadButton} onPress={pickImage}>
-              <Text style={{ color: "#fff", fontWeight: "bold" }}>
-                {form.image_url ? "Change Image" : "Upload Image"}
+      <Modal
+        visible={modalVisible}
+        animationType="slide"
+        transparent={true}
+        statusBarTranslucent={true}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalWrapper}>
+            {/* Header */}
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                {editingProduct ? "Edit Product" : "Add Product"}
               </Text>
-            </TouchableOpacity>
-
-            {/* Actions */}
-            <View style={styles.modalActions}>
               <TouchableOpacity
-                style={[styles.button, styles.editButton]}
-                onPress={handleSubmit}
-              >
-                <Text style={styles.buttonText}>Save</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.button, styles.deleteButton]}
+                style={styles.closeButton}
                 onPress={() => setModalVisible(false)}
               >
-                <Text style={styles.buttonText}>Cancel</Text>
+                <Ionicons name="close" size={24} color="#666" />
               </TouchableOpacity>
             </View>
+
+            {/* Body with Scroll */}
+            <KeyboardAvoidingView
+              style={styles.modalBody}
+              behavior={Platform.OS === "ios" ? "padding" : "height"}
+              keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
+            >
+              <ScrollView
+                style={styles.scrollView}
+                contentContainerStyle={styles.scrollViewContent}
+                showsVerticalScrollIndicator={true}
+                keyboardShouldPersistTaps="handled"
+              >
+                {/* Title */}
+                <Text style={styles.label}>Title *</Text>
+                <TextInput
+                  style={styles.input}
+                  value={form.title}
+                  onChangeText={(t) => setForm({ ...form, title: t })}
+                  placeholder="Enter product title"
+                />
+
+                {/* Category */}
+                <Text style={styles.label}>Category *</Text>
+                <TextInput
+                  style={styles.input}
+                  value={form.category}
+                  onChangeText={(t) => setForm({ ...form, category: t })}
+                  placeholder="Enter product category"
+                />
+
+                {/* Price */}
+                <Text style={styles.label}>Price ($) *</Text>
+                <TextInput
+                  style={styles.input}
+                  keyboardType="numeric"
+                  value={form.price === 0 ? "" : form.price.toString()}
+                  onChangeText={(t) =>
+                    setForm({ ...form, price: parseFloat(t) || 0 })
+                  }
+                  placeholder="0.00"
+                />
+
+                {/* Stock */}
+                <Text style={styles.label}>Stock *</Text>
+                <TextInput
+                  style={styles.input}
+                  keyboardType="numeric"
+                  value={
+                    form.inventory_count === 0
+                      ? ""
+                      : form.inventory_count.toString()
+                  }
+                  onChangeText={(t) =>
+                    setForm({ ...form, inventory_count: parseInt(t) || 0 })
+                  }
+                  placeholder="0"
+                />
+
+                {/* Description */}
+                <Text style={styles.label}>Description</Text>
+                <TextInput
+                  style={[styles.input, styles.textArea]}
+                  multiline
+                  numberOfLines={4}
+                  value={form.description}
+                  onChangeText={(t) => setForm({ ...form, description: t })}
+                  placeholder="Enter product description"
+                  textAlignVertical="top"
+                />
+
+                {/* Image Upload */}
+                <Text style={styles.label}>Product Image</Text>
+                {form.image_url ? (
+                  <Image
+                    source={{ uri: form.image_url }}
+                    style={styles.imagePreview}
+                  />
+                ) : null}
+                <TouchableOpacity
+                  style={styles.uploadButton}
+                  onPress={pickImage}
+                >
+                  <Text style={styles.uploadButtonText}>
+                    {form.image_url ? "Change Image" : "Upload Image"}
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Actions */}
+                <View style={styles.modalActions}>
+                  <TouchableOpacity
+                    style={[styles.modalButton, styles.cancelButton]}
+                    onPress={() => setModalVisible(false)}
+                  >
+                    <Text style={styles.modalButtonText}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.modalButton, styles.saveButton]}
+                    onPress={handleSubmit}
+                  >
+                    <Text style={styles.modalButtonText}>
+                      {editingProduct ? "Update" : "Save"}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
+            </KeyboardAvoidingView>
           </View>
         </View>
       </Modal>
@@ -287,85 +360,214 @@ export default function AdminProductsScreen() {
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#f8f8f8",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     padding: 15,
     backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e0e0e0",
+    elevation: 2,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  listContent: {
+    padding: 16,
+    paddingBottom: 20,
+  },
+  productCard: {
+    flexDirection: "row",
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
     elevation: 3,
   },
-  headerTitle: { fontSize: 18, fontWeight: "bold" },
-  container: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 5,
-    // marginBottom: 10,
-    borderRadius: 8,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 2,
-    backgroundColor: "#fff",
-    gap: 16,
-  },
-  card: {
-    flex: 1,
-  },
   imageContainer: {
-    position: "relative",
-    aspectRatio: 1, // Square aspect ratio
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    overflow: "hidden",
     backgroundColor: "#f8f8f8",
-    flex: 1,
   },
   productImage: {
     width: "100%",
     height: "100%",
-    margin: "auto",
   },
-  title: { fontWeight: "bold", fontSize: 16, marginBottom: 5 },
-  actions: { flexDirection: "row", marginTop: 10 },
+  productInfo: {
+    flex: 1,
+    marginLeft: 12,
+    justifyContent: "space-between",
+  },
+  title: {
+    fontWeight: "bold",
+    fontSize: 16,
+    marginBottom: 4,
+    color: "#333",
+  },
+  detail: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 2,
+  },
+  actions: {
+    flexDirection: "row",
+    marginTop: 8,
+  },
   button: {
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 6,
-    marginRight: 10,
+    marginRight: 8,
   },
-  editButton: { backgroundColor: "#2e86de" },
-  deleteButton: { backgroundColor: "#c0392b" },
-  buttonText: { color: "#fff", fontWeight: "bold" },
-  modalContainer: {
-    flex: 1,
+  editButton: {
+    backgroundColor: "#2e86de",
+  },
+  deleteButton: {
+    backgroundColor: "#c0392b",
+  },
+  buttonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 12,
+  },
+  emptyContainer: {
+    alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(0,0,0,0.5)",
+    paddingVertical: 60,
   },
-  modalContent: {
-    margin: 20,
-    padding: 20,
-    backgroundColor: "#fff",
+  emptyText: {
+    fontSize: 16,
+    color: "#666",
+    marginBottom: 16,
+  },
+  addFirstButton: {
+    backgroundColor: "#2e86de",
+    paddingVertical: 12,
+    paddingHorizontal: 24,
     borderRadius: 8,
   },
-  modalTitle: { fontSize: 18, fontWeight: "bold", marginBottom: 10 },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 6,
-    padding: 8,
-    marginBottom: 10,
+  addFirstButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+  // Modal Styles - CLEANED UP
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
+  },
+  modalWrapper: {
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: "90%",
+    minHeight: "50%", // Ensure minimum height
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  closeButton: {
+    padding: 4,
+  },
+  modalBody: {
+    flex: 1, // CRITICAL FIX - This was missing
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollViewContent: {
+    padding: 20,
+    paddingBottom: 40,
   },
   label: {
     fontSize: 14,
     fontWeight: "600",
-    marginBottom: 4,
-    marginTop: 10,
+    marginBottom: 6,
+    color: "#333",
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+    fontSize: 16,
+    backgroundColor: "#fafafa",
+  },
+  textArea: {
+    height: 100,
+    textAlignVertical: "top",
+  },
+  imagePreview: {
+    width: 100,
+    height: 100,
+    marginBottom: 12,
+    borderRadius: 8,
+    alignSelf: "center",
   },
   uploadButton: {
     backgroundColor: "#2e86de",
-    paddingVertical: 10,
-    borderRadius: 6,
+    paddingVertical: 12,
+    borderRadius: 8,
     alignItems: "center",
-    marginBottom: 15,
+    marginBottom: 20,
   },
-  modalActions: { flexDirection: "row", justifyContent: "flex-end" },
+  uploadButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+  modalActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 12,
+    marginTop: 10,
+  },
+  modalButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    minWidth: 80,
+    alignItems: "center",
+  },
+  cancelButton: {
+    backgroundColor: "#95a5a6",
+  },
+  saveButton: {
+    backgroundColor: "#27ae60",
+  },
+  modalButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
 });

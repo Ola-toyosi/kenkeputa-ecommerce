@@ -1,7 +1,6 @@
-import { Stack } from "expo-router";
-import { View, TouchableOpacity, Text, StyleSheet } from "react-native";
+import { Stack, router } from "expo-router";
+import { TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
 
 export default function AuthLayout() {
   return (

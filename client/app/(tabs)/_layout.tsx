@@ -16,7 +16,7 @@ export default function TabLayout() {
           position: "absolute",
           borderTopWidth: 0,
           elevation: 0,
-          height: 60 + insets.bottom, // Adjust height for bottom insets
+          height: insets.bottom, // Adjust height for bottom insets
           paddingBottom: insets.bottom > 0 ? insets.bottom : 8, // Handle home indicator on iOS
         },
         tabBarBackground: () => (

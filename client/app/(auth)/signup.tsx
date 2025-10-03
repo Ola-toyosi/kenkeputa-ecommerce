@@ -9,7 +9,6 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
-  Alert,
 } from "react-native";
 import { router } from "expo-router";
 import { AuthContext, RegisterData } from "../context/AuthContext";
@@ -105,12 +104,6 @@ const SignupScreen: React.FC = () => {
         text1: "Registration Failed",
         text2: `${error}.`,
       });
-    }
-  };
-
-  const clearError = (field: keyof FormErrors): void => {
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: "" }));
     }
   };
 
