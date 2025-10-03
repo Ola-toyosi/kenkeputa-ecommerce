@@ -2,8 +2,11 @@ import React from "react";
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function TabLayout() {
+  const insets = useSafeAreaInsets();
+
   return (
     <Tabs
       screenOptions={{
@@ -13,7 +16,8 @@ export default function TabLayout() {
           position: "absolute",
           borderTopWidth: 0,
           elevation: 0,
-          height: 60,
+          height: 60 + insets.bottom, // Adjust height for bottom insets
+          paddingBottom: insets.bottom > 0 ? insets.bottom : 8, // Handle home indicator on iOS
         },
         tabBarBackground: () => (
           <BlurView
